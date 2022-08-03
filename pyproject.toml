@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="start"
+version="0.1.0"
+dependencies=[ "fire" ]
+[[project.authors]]
+name = "Dragon-GCS"
+email = "878173121@qq.com"
+[project.scripts]
+start = "start:main"
+[tool.setuptools]
+packages = [ "start" ]
