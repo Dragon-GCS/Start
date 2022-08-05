@@ -19,5 +19,6 @@ Install from github
 
 - `start init` Init current folder
 - `start new <project name>`新建项目，创建**README.md**、**setup.py**、**pyproject.toml**、**<project_name>/**、**test/** 等相关文件和目录
-- `start install/add` 安装包并添加到依赖中
-- `start remove/rm` 从依赖和硬盘中移除包
+- `start install` 从指定依赖文件中安装包
+- `start add` 安装包并添加到依赖中
+- `start remove` 从依赖和硬盘中移除包

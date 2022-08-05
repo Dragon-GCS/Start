@@ -1,6 +1,12 @@
 .venv/
 .vscode/
+**/__pycache__/
+
 dist/
 build/
+*.egg-info/
 
 **test**
+*.toml
+
+!pyproject.toml
