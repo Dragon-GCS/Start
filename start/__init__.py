@@ -46,8 +46,8 @@ class Start:
             packages:
                 Packages to install after create the virtual environment
         """
-        if project_name != ".":
-            Info(f"Start creating project: {project_name}")
+        Info(f"Start {'creating' if project_name == '.' else 'initializing'}"
+             f"project: {project_name}")
         env_path = os.path.join(project_name, vname)
         if os.path.exists(env_path) and not force:
             Error(f"Virtual environment {env_path} already exists,"
