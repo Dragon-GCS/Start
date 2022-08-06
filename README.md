@@ -7,10 +7,11 @@ A python package manager based on pip and venv, use `pyproject.toml` instead of 
 Install from github
 
 ```shell
->>> pip install https://github.com/Dragon-GCS/Start
+>>> pip install git+https://github.com/Dragon-GCS/Start
 ```
 
-> `start` is a default alias in **powershell**, so use **`Remove-Item alias:start -Force`** to remove alias before use `start`
+> `start` is a default alias in **powershell**, use **`Remove-Item alias:start -Force`** to remove alias before use `start`
+>
 > **Optional:** Add `Remove-Item alias:start -Force` in powershell profile
 
 ## Usage
