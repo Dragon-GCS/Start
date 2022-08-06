@@ -1,6 +1,6 @@
 import os
 
-from .color import Green, Red
+from .logger import Warn
 
 
 SETUP_PY = """
@@ -37,32 +37,47 @@ class Test{Camel}(unittest.TestCase):
 
 
 class Template:
-    # :TODO skip existing file
-    # :TODO add user template support
     def __init__(self, project_name: str):
         self.project_name = project_name
+
+    @classmethod
+    def write_file(cls, file_path: str, content: str):
+        """Write content to file."""
+        if not os.path.isfile(file_path):
+            with open(file_path, "w", encoding="utf8") as f:
+                f.write(content)
+        else:
+            Warn(f"File '{file_path}' already exists.")
+
+    @classmethod
+    def create_folder(cls, folder_path):
+        """Create folder with examining if it exists."""
+        if not os.path.isdir(folder_path):
+            os.makedirs(folder_path)
+        else:
+            Warn(f"Folder '{folder_path}' already exists.")
 
     def create_by_template(self):
         ...
 
     def create_default(self):
+        """Default template for project."""
         project_name = self.project_name.replace("-", "_")
-        os.makedirs(project_name, exist_ok=True)
-        open(os.path.join(project_name, "__init__.py"), "w").close()
-        os.makedirs("test", exist_ok=True)
-        open(os.path.join("test", "__init__.py"), "w").close()
-        with open(os.path.join("test", f"test_{project_name}.py"), "w") as f:
-            f.write(TEST_PY.format(
-                Camel="".join(w.capitalize() for w in project_name.split("_"))
-            ))
-        with open("setup.py", "w", encoding="utf8") as f:
-            f.write(SETUP_PY)
-        with open("pyproject.toml", "w", encoding="utf8") as f:
-            f.write(PYPROJECT_TOML.format(name=project_name))
-        with open("main.py", "w", encoding="utf8") as f:
-            f.write(MAIN_PY.format(project_name))
 
-        open("README.md", "w", encoding="utf8").close()
+        self.create_folder(project_name)
+        self.write_file(os.path.join(project_name, "__init__.py"), "")
+
+        self.create_folder("test")
+        self.write_file(os.path.join("test", "__init__.py"), "")
+        self.write_file(
+            os.path.join("test", "test_{}.py".format(project_name)),
+            TEST_PY.format(
+                Camel="".join(w.capitalize() for w in project_name.split("_")))
+        )
+        self.write_file("setup.py", SETUP_PY)
+        self.write_file("pyproject.toml", PYPROJECT_TOML.format(name=project_name))
+        self.write_file("main.py", MAIN_PY.format(project_name))
+        self.write_file("README.md", "")
 
     def create(self):
         """Create project template at specified path.
@@ -70,16 +85,13 @@ class Template:
         Args:
             path: Path to create the template
         """
-        print(Green("Creating project files."))
         current_dir = os.getcwd()
-        os.chdir(self.project_name)
+        if self.project_name == ".":
+            self.project_name = os.path.basename(current_dir).lower()
+        else:
+            os.chdir(self.project_name)
         if os.path.exists("~/.start/template"):
             self.create_by_template()
         else:
             self.create_default()
         os.chdir(current_dir)
-        print(Green("Finish creating project files."))
-
-
-if __name__ == "__main__":
-    ...

@@ -5,20 +5,17 @@ requires = ["setuptools"]
 [project]
 name = "start"
 version = "0.1.0"
-dependencies = ["autopep8", "fire", "rtoml"]
+dependencies = ["fire", "rtoml"]
 
 [[project.authors]]
 name = "Dragon-GCS"
 email = "87817321@qq.com"
 
-[project.optional-dependencies]
-color = ["colorama"]
-
 [project.scripts]
 start = "start:main"
+
 [tool.setuptools]
 packages = ["start"]
 
 [tool.start]
-dependencies = []
 dev-dependencies = []

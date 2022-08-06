@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import List
 
 import fire
@@ -8,7 +7,7 @@ import rtoml
 from start.template import Template
 
 from .manager import DependencyManager, ExtEnvBuilder, PipManager
-from .color import Cyan, Red, Yellow
+from .logger import Info, Error, Success
 
 
 class Start:
@@ -47,13 +46,13 @@ class Start:
             packages:
                 Packages to install after create the virtual environment
         """
-        print(Cyan("Args:"))
-        print(Yellow(f"project_name: {project_name}"))
-        print(Yellow(f"vname: {vname}"))
-        print(Yellow(f"packages: {packages}"))
-        print(Yellow(f"flags: {force or ''} {without_pip or ''}"
-                     f"{without_upgrade or ''} {without_system_packages or ''}"))
+        if project_name != ".":
+            Info(f"Start creating project: {project_name}")
         env_path = os.path.join(project_name, vname)
+        if os.path.exists(env_path) and not force:
+            Error(f"Virtual environment {env_path} already exists,"
+                   "use --force to override")
+            return
         ExtEnvBuilder(
             packages=packages,
             force=force,
@@ -61,11 +60,13 @@ class Start:
             without_upgrade=without_upgrade,
             without_system_packages=without_system_packages
         ).create(env_path)
+        Success("Finish creating virtual environment.")
         # Create project directory from template
         Template(project_name=project_name).create()
         # modify dependencies in pyproject.toml
         DependencyManager.modify_dependencies(
             "add", packages, os.path.join(project_name, "pyproject.toml"))
+        Success("Finish creating project files.")
 
     def init(
         self,
@@ -108,29 +109,27 @@ class Start:
 
     def install(
         self,
-        dependency: str = "pyproject.toml"
+        dependency: str = ""
     ):
         """Install packages in specified dependency file.
 
         Args:
             dependency:
                 Dependency file name. If given a toml file, start will parse
-                "tool.start.dependencies", else start will parse each line as
+                "project.dependencies", else start will parse each line as
                 a package name to install. As default, if not found
                 "pyproject.toml", start will try to find "requirements.txt"
                 When virtual environment is not activated, start will try to
                 find interpreter in .venv, .env orderly.
         """
-        if file := DependencyManager.ensure_path("pyproject.toml"):
-            with open(file, encoding="utf-8") as f:
-                packages: List[str] = rtoml.load(f)["project"]["dependencies"]
-        elif file := DependencyManager.ensure_path("requirements.txt"):
-            with open(file, encoding="utf-8") as f:
-                packages = f.read().splitlines()
+        if dependency:
+            packages = DependencyManager.load_dependencies(dependency)
+        elif file := (DependencyManager.ensure_path("pyproject.toml") or
+                      DependencyManager.ensure_path("pyproject.toml")):
+            packages = DependencyManager.load_dependencies(file)
         else:
-            print(Red("No dependency file found"))
+            Error("No dependency file found")
             return
-
         PipManager(DependencyManager.find_executable()).install(packages)
 
     def add(
@@ -149,9 +148,13 @@ class Start:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
         """
+        if not dependency.endswith(".toml"):
+            Warning("Only support toml file now")
+            return
         PipManager(DependencyManager.find_executable()).install(packages)
-        DependencyManager.modify_dependencies("add", packages, dependency)
-        print(Cyan("Updated dependency file"))
+        DependencyManager.modify_dependencies(
+            method="add", packages=packages, file=dependency, dev=dev)
+        Success("Updated dependency file")
 
     def remove(
         self,
@@ -169,9 +172,13 @@ class Start:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
         """
+        if not dependency.endswith(".toml"):
+            Warning("Only support toml file now")
+            return
         PipManager(DependencyManager.find_executable()).uninstall(packages)
-        DependencyManager.modify_dependencies("remove", packages, dependency)
-        print(Cyan("Updated dependency file"))
+        DependencyManager.modify_dependencies(
+            method="remove", packages=packages, file=dependency, dev=dev)
+        Success("Updated dependency file")
 
 
 def main():

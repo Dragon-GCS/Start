@@ -1,12 +1,12 @@
 import colorama
 
-
 RESET = colorama.Style.RESET_ALL
 
 class Color(str):
     color: str
     def __init__(self, msg: str):
         self.msg = msg.strip(RESET).replace(RESET, RESET + self.color)
+        print(self)
 
     def __str__(self) -> str:
         return f"{self.color}{self.msg}{RESET}"
@@ -18,23 +18,23 @@ class Color(str):
         return f"{other}{self}"
 
 
-class Green(Color):
+class Success(Color):
     color: str = colorama.Fore.GREEN
 
 
-class Red(Color):
+class Error(Color):
     color: str = colorama.Fore.RED
 
 
-class Yellow(Color):
+class Detail(Color):
     color: str = colorama.Fore.YELLOW
 
-class Blue(Color):
+class Warn(Color):
     color: str = colorama.Fore.BLUE
 
 
-class Magenta(Color):
+class Prompt(Color):
     color: str = colorama.Fore.MAGENTA
 
-class Cyan(Color):
+class Info(Color):
     color: str = colorama.Fore.CYAN

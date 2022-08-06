@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import rtoml
 
-from .color import Cyan, Green, Magenta, Red, Blue
+from .logger import Detail, Info, Success, Prompt, Error, Warn
 
 
 def display_activate_cmd(bin_path: str):
@@ -32,12 +32,12 @@ def display_activate_cmd(bin_path: str):
 
     platform = "Windows" if sys.platform.startswith("win") else "POSIX"
     scripts = active_scripts[platform]
-    print(Green("Select the following command to activate the virtual"
-                "environment according to your shell:"))
+    Prompt("Select the following command to activate the virtual"
+                "environment according to your shell:")
     commands = "\n".join(
         f"{shell:10}: {os.path.abspath(os.path.join(bin_path, script))}"
         for shell, script in scripts.items())
-    print(Blue(commands))
+    Detail(commands)
 
 
 class DependencyManager:
@@ -57,11 +57,24 @@ class DependencyManager:
         if "start" not in config["tool"]:
             config["tool"]["start"] = {"dev-dependencies": []}
         if not isinstance(config["project"]["dependencies"], list):
-            print(Red("project.dependencies is not a list, start fix it."))
+            Error("project.dependencies is not a list, start fix it.")
             config["project"]["dependencies"] = []
         if not isinstance(config["tool"]["start"]["dev-dependencies"], list):
-            print(Red("tool.start.dev-dependencies is not a list, start fix it."))
+            Error("tool.start.dev-dependencies is not a list, start fix it.")
             config["tool"]["start"]["dev-dependencies"] = []
+
+    @classmethod
+    def load_dependencies(cls, config_path: str) -> List[str]:
+        if config_path.endswith(".toml"):
+            with open(config_path, encoding="utf8") as f:
+                config = rtoml.load(f)
+                cls.ensure_config(config)
+                return config["project"]["dependencies"]
+        if config_path.endswith(".txt"):
+            with open(config_path, encoding="utf8") as f:
+                return f.read().splitlines()
+        Error("Not found dependencies due to unsupported dependency file format")
+        return []
 
     @classmethod
     def modify_dependencies(
@@ -80,13 +93,13 @@ class DependencyManager:
             dev: Add packages as development dependency
         """
         if not cls.ensure_path(file):
-            print(Red("No dependency file found"))
+            Error("No dependency file found")
             return
 
         with open(file, encoding="utf8") as f:
             config = rtoml.load(f)
+            cls.ensure_config(config)
 
-        cls.ensure_config(config)
         dependencies: list = config["project"]["dependencies"] if not dev \
             else config["tool"]["start"]["dev-dependencies"]
 
@@ -125,15 +138,12 @@ class DependencyManager:
         find any, return "python"
         """
         bin_path = "Scripts" if sys.platform.startswith("win") else "bin"
-        if env_path := os.getenv("VIRTUAL_ENV"):
-            ...
-        elif env_path := cls.ensure_path(".venv"):
-            ...
-        elif env_path := cls.ensure_path(".env"):
-            ...
-        else:
-            return "python"
-        return os.path.join(env_path, bin_path, "python")
+        if env_path := (
+            os.getenv("VIRTUAL_ENV") or
+            cls.ensure_path(".venv") or
+            cls.ensure_path(".env")):
+            return os.path.join(env_path, bin_path, "python")
+        return "python"
 
 
 class PipManager:
@@ -197,13 +207,14 @@ class PipManager:
     def check_output(self):
         """Check if the pip install or uninstall is successful."""
         for line in self.stdout:
+            line = line.strip()
             if line.startswith("Requirement already satisfied"):
-                print(Blue(line))
+                Warn(line)
             if line.startswith("Successfully"):
-                print(Green(line))
+                Success(line)
         if self.stderr:
-            print(Red("Install/Uninstall packages failed:"))
-            print(Magenta("\n".join(self.stderr)))
+            Error("Install/Uninstall packages failed:")
+            Detail("\n".join(self.stderr))
             exit(1)
 
 
@@ -240,18 +251,10 @@ class ExtEnvBuilder(venv.EnvBuilder):
         if self.with_pip and (self.upgrade_packages or self.packages):
             pip = PipManager(context.env_exe)
             if self.upgrade_packages:
-                print(Green("Upgrading core packages..."))
+                Info("Upgrading core packages...")
                 pip.install(("pip", "setuptools"), upgrade=True)
             if self.packages:
-                print(Green("Start installing packages..."))
+                Info("Start installing packages...")
                 pip.install(self.packages)
 
         display_activate_cmd(context.bin_path)
-
-
-if __name__ == '__main__':
-    builder = ExtEnvBuilder(("123", ), without_upgrade=True, without_pip=True)
-    context = (builder.ensure_directories("name"))
-    builder.post_setup(context)
-    DependencyManager.modify_dependencies(
-        "add", ("requests", "urllib3"), "pyproject.toml")
