@@ -123,6 +123,8 @@ class DependencyManager:
         with open(file, "w", encoding="utf8") as f:
             rtoml.dump(config, f)
 
+        Success("Updated dependency file")
+
     @classmethod
     def ensure_path(cls, basename: str, parent: int = 2) -> Optional[str]:
         """Find the file or folder from current path to parent directories.

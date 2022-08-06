@@ -154,7 +154,6 @@ class Start:
         PipManager(DependencyManager.find_executable()).install(packages)
         DependencyManager.modify_dependencies(
             method="add", packages=packages, file=dependency, dev=dev)
-        Success("Updated dependency file")
 
     def remove(
         self,
@@ -178,7 +177,6 @@ class Start:
         PipManager(DependencyManager.find_executable()).uninstall(packages)
         DependencyManager.modify_dependencies(
             method="remove", packages=packages, file=dependency, dev=dev)
-        Success("Updated dependency file")
 
 
 def main():
