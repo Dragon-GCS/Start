@@ -11,11 +11,11 @@ import rtoml
 from .logger import Detail, Info, Success, Prompt, Error, Warn
 
 
-def display_activate_cmd(bin_path: str):
+def display_activate_cmd(env_dir: str):
     """Display the activate command for the virtual environment.
 
     Args:
-        bin_path: Path to the virtual environment bin directory
+        env_dir: Path to the virtual environment directory
     """
     active_scripts = {
         "Windows": {
@@ -31,9 +31,10 @@ def display_activate_cmd(bin_path: str):
     }
 
     platform = "Windows" if sys.platform.startswith("win") else "POSIX"
+    bin_path = os.path.join(env_dir, "Scripts" if platform == "Windows" else "bin")
     scripts = active_scripts[platform]
     Prompt("Select the following command to activate the virtual"
-                "environment according to your shell:")
+           "environment according to your shell:")
     commands = "\n".join(
         f"{shell:10}: {os.path.abspath(os.path.join(bin_path, script))}"
         for shell, script in scripts.items())
@@ -65,6 +66,11 @@ class DependencyManager:
 
     @classmethod
     def load_dependencies(cls, config_path: str) -> List[str]:
+        """Try to load dependency list from the config path.
+
+        Args:
+            config_path: Path to the config file
+        """
         if config_path.endswith(".toml"):
             with open(config_path, encoding="utf8") as f:
                 config = rtoml.load(f)
@@ -100,18 +106,19 @@ class DependencyManager:
             config = rtoml.load(f)
             cls.ensure_config(config)
 
-        dependencies: list = config["project"]["dependencies"] if not dev \
-            else config["tool"]["start"]["dev-dependencies"]
-
-        for package in packages:
-            if method == "add":
+        if method == "add":
+            dependencies: list = config["project"]["dependencies"] if not dev \
+                else config["tool"]["start"]["dev-dependencies"]
+            for package in packages:
                 if package not in dependencies:
                     dependencies.append(package)
-            elif method == "remove":
-                if package in dependencies:
-                    dependencies.remove(package)
-
-        dependencies.sort()
+            dependencies.sort()
+        elif method == "remove":
+            for package in packages:
+                if not dev and package in config["project"]["dependencies"]:
+                    config["project"]["dependencies"].remove(package)
+                if package in config["tool"]["start"]["dev-dependencies"]:
+                    config["tool"]["start"]["dev-dependencies"].remove(package)
 
         with open(file, "w", encoding="utf8") as f:
             rtoml.dump(config, f)
@@ -138,10 +145,14 @@ class DependencyManager:
         find any, return "python"
         """
         bin_path = "Scripts" if sys.platform.startswith("win") else "bin"
-        if env_path := (
-            os.getenv("VIRTUAL_ENV") or
-            cls.ensure_path(".venv") or
-            cls.ensure_path(".env")):
+        if env_path := os.getenv("VIRTUAL_ENV"):
+            return os.path.join(env_path, bin_path, "python")
+        elif env_path :=(
+                cls.ensure_path(".venv") or
+                cls.ensure_path(".env")):
+            Info(f"Found virtual environment '{env_path}' but was not"
+                 "activated, packages was installed by this interpreter")
+            display_activate_cmd(env_path)
             return os.path.join(env_path, bin_path, "python")
         return "python"
 
@@ -215,7 +226,6 @@ class PipManager:
         if self.stderr:
             Error("Install/Uninstall packages failed:")
             Detail("\n".join(self.stderr))
-            exit(1)
 
 
 class ExtEnvBuilder(venv.EnvBuilder):
@@ -257,4 +267,4 @@ class ExtEnvBuilder(venv.EnvBuilder):
                 Info("Start installing packages...")
                 pip.install(self.packages)
 
-        display_activate_cmd(context.bin_path)
+        display_activate_cmd(context.env_dir)
