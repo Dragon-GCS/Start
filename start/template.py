@@ -36,6 +36,12 @@ class Test{Camel}(unittest.TestCase):
 """
 
 
+START_CONFIG_PATH = [
+    os.path.join(os.path.expanduser("~"), ".start"),
+    os.path.join(os.path.expanduser("~"), ".config", "start"),
+]
+
+
 class Template:
     def __init__(self, project_name: str):
         self.project_name = project_name
@@ -86,12 +92,16 @@ class Template:
             path: Path to create the template
         """
         current_dir = os.getcwd()
+
         if self.project_name == ".":
             self.project_name = os.path.basename(current_dir).lower()
         else:
             os.chdir(self.project_name)
-        if os.path.exists("~/.start/template"):
-            self.create_by_template()
+
+        for config_path in START_CONFIG_PATH:
+            if os.path.exists(os.path.join(config_path, "template")):
+                self.create_by_template()
         else:
             self.create_default()
+
         os.chdir(current_dir)

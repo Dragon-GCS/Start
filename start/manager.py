@@ -11,6 +11,9 @@ import rtoml
 from .logger import Detail, Info, Success, Prompt, Error, Warn
 
 
+DEFAULT_ENV = [".venv", ".env"]
+
+
 def display_activate_cmd(env_dir: str):
     """Display the activate command for the virtual environment.
 
@@ -149,13 +152,12 @@ class DependencyManager:
         bin_path = "Scripts" if sys.platform.startswith("win") else "bin"
         if env_path := os.getenv("VIRTUAL_ENV"):
             return os.path.join(env_path, bin_path, "python")
-        elif env_path :=(
-                cls.ensure_path(".venv") or
-                cls.ensure_path(".env")):
-            Info(f"Found virtual environment '{env_path}' but was not"
-                 "activated, packages was installed by this interpreter")
-            display_activate_cmd(env_path)
-            return os.path.join(env_path, bin_path, "python")
+        for path in DEFAULT_ENV:
+            if env_path := cls.ensure_path(path):
+                Info(f"Found virtual environment '{env_path}' but was not"
+                    "activated, packages was installed by this interpreter")
+                display_activate_cmd(env_path)
+                return os.path.join(env_path, bin_path, "python")
         return "python"
 
 
