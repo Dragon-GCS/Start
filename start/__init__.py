@@ -229,6 +229,10 @@ class Start:
         else:
             packages = pip.execute(["list"]).parse_list_output()
 
+        if not packages:
+            Warn("No packages found")
+            return
+
         if not tree:
             Info(f"Installed{status} packages:")
             Detail("\n".join("- " + package for package in packages))
