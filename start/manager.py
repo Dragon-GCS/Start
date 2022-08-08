@@ -195,7 +195,7 @@ class PipManager:
         """Execute the pip command."""
         cmd = self.cmd + cmd
         self.set_outputs(
-            subprocess.run(cmd, capture_output=True, universal_newlines=True))
+            subprocess.run(cmd, capture_output=True))
         if check:
             self.check_output(cmd)
         return self
@@ -222,11 +222,20 @@ class PipManager:
 
     def set_outputs(self, output: subprocess.CompletedProcess):
         """Set the outputs that to be parse."""
-        self.stdout = output.stdout.strip().replace("\r\n", "\n").split("\n") \
+        self.stdout = self.decode(
+            output.stdout).strip().replace("\r", "").split("\n") \
             if output.stdout else []
-        self.stderr = output.stderr.strip().replace("\r\n", "\n").split("\n") \
+        self.stderr = self.decode(
+            output.stderr).strip().replace("\r", "").split("\n") \
             if output.stderr else []
         return self
+
+    def decode(self, output: bytes):
+        """Decode the output to utf8 or gbk."""
+        try:
+            return output.decode("utf8")
+        except UnicodeDecodeError:
+            return output.decode("gbk")
 
     def check_output(self, cmd: List[str]):
         """Check if the pip install or uninstall is successful."""
