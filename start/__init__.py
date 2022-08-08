@@ -220,7 +220,7 @@ class Start:
 
         status = ""
         if dep or dev:
-            status = "Dependencies" if dep else "Dev-Dependencies"
+            status = "(Dependencies)" if dep else "(Dev-Dependencies)"
             if not (config_path := DependencyManager.ensure_path(dependency)):
                 Error(f"Dependency file {dependency} not found")
                 return
@@ -230,16 +230,16 @@ class Start:
             packages = pip.execute(["list"]).parse_list_output()
 
         if not tree:
-            Info(f"Installed({status}) packages:")
+            Info(f"Installed{status} packages:")
             Detail("\n".join("- " + package for package in packages))
             return
 
         analyzed_packages = pip.analyze_packages_require(*packages)
         Success("Analysis for installed packages:")
 
-        Info(pip.execu if pip.execu == "python"
+        Info(pip.execu if path.basename(pip.execu) == pip.execu
              else path.basename(path.abspath(pip.execu + "/../../.."))
-             + f"({status})"
+             + f"{status}"
              )
 
         installed_packages = set(packages)

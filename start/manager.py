@@ -166,16 +166,17 @@ class DependencyManager:
         bin directory, else start will find .venv, .env as env_path. If not
         find any, return "python"
         """
+        base_interpreter = os.path.basename(sys.executable)
         bin_path = "Scripts" if sys.platform.startswith("win") else "bin"
         if env_path := os.getenv("VIRTUAL_ENV"):
-            return os.path.join(env_path, bin_path, "python")
+            return os.path.join(env_path, bin_path, base_interpreter)
         for path in DEFAULT_ENV:
             if env_path := cls.ensure_path(path):
                 Info(f"Found virtual environment '{env_path}' but was not"
                      "activated, packages was installed by this interpreter")
                 display_activate_cmd(env_path)
-                return os.path.join(env_path, bin_path, "python")
-        return "python"
+                return os.path.join(env_path, bin_path, base_interpreter)
+        return base_interpreter
 
 
 class PipManager:
