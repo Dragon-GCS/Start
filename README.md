@@ -146,3 +146,48 @@ FLAGS
         Dependency file name, default is pyproject.toml (Only support toml file now).
         If file not exists, it will be create.
 ```
+
+### `start show`
+
+```shell
+SYNOPSIS
+    start show [PACKAGES]...
+
+DESCRIPTION
+    Same as "pip show" command.
+
+POSITIONAL ARGUMENTS
+    PACKAGES
+        Packages to show
+```
+
+### `start list`
+
+```shell
+SYNOPSIS
+    start list <flags>
+
+DESCRIPTION
+    Display all installed packages.
+
+FLAGS
+    --tree=TREE
+        Type: bool
+        Display installed packages in a tree structure
+    --dep=DEP
+        Type: bool
+        Display installed packages in a dependency file
+    --dev=DEV
+        Type: bool
+        Display installed packages in development dependency
+    --dependency=DEPENDENCY
+        Type: str
+        Dependency file name, default is pyproject.toml (Only support toml file now).
+        Only take effect when "dep" or "dev"  is True.
+```
+
+## Changelog
+
+### v0.2.0
+
+* add: `start show` and `start relist` command

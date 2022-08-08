@@ -2,8 +2,11 @@ import colorama
 
 RESET = colorama.Style.RESET_ALL
 
+
 class Color(str):
+
     color: str
+
     def __init__(self, msg: str):
         self.msg = msg.strip(RESET).replace(RESET, RESET + self.color)
         print(self)
@@ -29,12 +32,14 @@ class Error(Color):
 class Detail(Color):
     color: str = colorama.Fore.YELLOW
 
+
 class Warn(Color):
     color: str = colorama.Fore.BLUE
 
 
 class Prompt(Color):
     color: str = colorama.Fore.MAGENTA
+
 
 class Info(Color):
     color: str = colorama.Fore.CYAN

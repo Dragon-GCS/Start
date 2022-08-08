@@ -1,6 +1,6 @@
 import os
 
-from .logger import Warn
+from start.logger import Warn
 
 
 SETUP_PY = """
@@ -81,7 +81,8 @@ class Template:
                 Camel="".join(w.capitalize() for w in project_name.split("_")))
         )
         self.write_file("setup.py", SETUP_PY)
-        self.write_file("pyproject.toml", PYPROJECT_TOML.format(name=project_name))
+        self.write_file(
+            "pyproject.toml", PYPROJECT_TOML.format(name=project_name))
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
 

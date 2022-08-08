@@ -1,13 +1,11 @@
 import os
-from typing import List
-
 import fire
-import rtoml
 
+from typing import Dict, List
+
+from start.logger import Detail, Info, Error, Success, Warn
+from start.manager import DependencyManager, ExtEnvBuilder, PipManager
 from start.template import Template
-
-from .manager import DependencyManager, ExtEnvBuilder, PipManager
-from .logger import Info, Error, Success
 
 
 class Start:
@@ -51,7 +49,7 @@ class Start:
         env_path = os.path.join(project_name, vname)
         if os.path.exists(env_path) and not force:
             Error(f"Virtual environment {env_path} already exists,"
-                   "use --force to override")
+                  "use --force to override")
             return
         ExtEnvBuilder(
             packages=packages,
@@ -130,7 +128,7 @@ class Start:
         else:
             Error("No dependency file found")
             return
-        PipManager(DependencyManager.find_executable()).install(packages)
+        PipManager(DependencyManager.find_executable()).install(*packages)
 
     def add(
         self,
@@ -142,6 +140,7 @@ class Start:
 
         Args:
             packages:
+                Packages to install and record in the dependency file
             dev:
                 Add packages as development dependency
             dependency:
@@ -151,7 +150,7 @@ class Start:
         if not dependency.endswith(".toml"):
             Warning("Only support toml file now")
             return
-        PipManager(DependencyManager.find_executable()).install(packages)
+        PipManager(DependencyManager.find_executable()).install(*packages)
         DependencyManager.modify_dependencies(
             method="add", packages=packages, file=dependency, dev=dev)
 
@@ -165,6 +164,7 @@ class Start:
 
         Args:
             packages:
+                Packages to uninstall and remove from the dependency file
             dev:
                 Remove packages from development dependency
             dependency:
@@ -174,9 +174,81 @@ class Start:
         if not dependency.endswith(".toml"):
             Warning("Only support toml file now")
             return
-        PipManager(DependencyManager.find_executable()).uninstall(packages)
+        PipManager(DependencyManager.find_executable()).uninstall(*packages)
         DependencyManager.modify_dependencies(
             method="remove", packages=packages, file=dependency, dev=dev)
+
+    def show(
+        self,
+        *packages
+    ):
+        """Same as "pip show" command.
+
+        Args:
+            packages:
+                Packages to show
+
+        """
+        pip = PipManager(DependencyManager.find_executable())
+        pip.execute(["show", *packages], check=False)
+        if pip.stdout:
+            Detail("\n".join(pip.stdout))
+        if pip.stderr:
+            Error("\n".join(pip.stderr))
+
+    def list(
+        self,
+        *,
+        tree: bool = False,
+        dep: bool = False,
+        dev: bool = False,
+        dependency: str = "pyproject.toml"
+    ):
+        """Display all installed packages.
+
+        Args:
+            tree:
+                Display installed packages in a tree structure
+            dep:
+                Display installed packages in a dependency file
+            dev:
+                Display installed packages in development dependency
+            dependency:
+                Dependency file name, default is pyproject.toml (Only support
+                toml file now). Only take effect when "dep" or "dev"  is True.
+        """
+        pip = PipManager(DependencyManager.find_executable())
+        if dep or dev:
+            if not (config_path := DependencyManager.ensure_path(dependency)):
+                Error(f"Dependency file {dependency} not found")
+                return
+            packages = DependencyManager.load_dependencies(
+                config_path, dev=dev)
+        else:
+            packages = pip.execute(["list"]).parse_list_output()
+        if not tree:
+            Info("Installed packages:")
+            Detail("\n".join("- " + package for package in packages))
+        else:
+            def print_tree(name: str, requires: List[Dict], depth: int = 0):
+                """Display installed packages in a tree structure."""
+                indent = depth * 2
+                Status = Detail if name in packages else Warn
+                if depth == 0:
+                    Status(f"- {name}")
+                elif depth == 1:
+                    Status(f"{' ' * indent}└─{name}")
+                else:
+                    Status(f"  {'│ ' * (depth - 1)}└─{name}")
+                for require in requires:
+                    for require_name, require_requires in require.items():
+                        print_tree(require_name, require_requires, depth + 1)
+
+            analyzed_packages = pip.analyze_packages_require(*packages)
+
+            Success("Analysis for installed packages:")
+            for package, requires in analyzed_packages.items():
+                print_tree(package, requires)
 
 
 def main():

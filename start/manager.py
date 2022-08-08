@@ -3,15 +3,19 @@ import subprocess
 import sys
 import venv
 
-from typing import List, Literal, Optional, Sequence, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 from types import SimpleNamespace
 
 import rtoml
 
-from .logger import Detail, Info, Success, Prompt, Error, Warn
+from start.logger import Detail, Info, Success, Prompt, Error, Warn
 
 
 DEFAULT_ENV = [".venv", ".env"]
+# subprocess use gbk in PIPE decoding and can't to change, due to
+# UnicodeDecodeError when some package's meta data contains invalid characters.
+# Refer: https://github.com/python/cpython/issues/50385
+os.environ["PYTHONIOENCODING"] = "utf-8"
 
 
 def display_activate_cmd(env_dir: str):
@@ -34,7 +38,8 @@ def display_activate_cmd(env_dir: str):
     }
 
     platform = "Windows" if sys.platform.startswith("win") else "POSIX"
-    bin_path = os.path.join(env_dir, "Scripts" if platform == "Windows" else "bin")
+    bin_path = os.path.join(
+        env_dir, "Scripts" if platform == "Windows" else "bin")
     scripts = active_scripts[platform]
     Prompt("Select the following command to activate the virtual"
            "environment according to your shell:")
@@ -68,21 +73,28 @@ class DependencyManager:
             config["tool"]["start"]["dev-dependencies"] = []
 
     @classmethod
-    def load_dependencies(cls, config_path: str) -> List[str]:
+    def load_dependencies(
+        cls,
+        config_path: str,
+        dev: bool = False
+    ) -> List[str]:
         """Try to load dependency list from the config path.
 
         Args:
             config_path: Path to the config file
+            dev: Load dev-dependencies if True, otherwise load dependencies
         """
         if config_path.endswith(".toml"):
             with open(config_path, encoding="utf8") as f:
                 config = rtoml.load(f)
                 cls.ensure_config(config)
+                if dev:
+                    return config["tool"]["start"]["dev-dependencies"]
                 return config["project"]["dependencies"]
         if config_path.endswith(".txt"):
             with open(config_path, encoding="utf8") as f:
                 return f.read().splitlines()
-        Error("Not found dependencies due to unsupported dependency file format")
+        Error("Not found dependencies due to unsupported file format")
         return []
 
     @classmethod
@@ -93,7 +105,7 @@ class DependencyManager:
         file: str,
         dev: bool = False
     ):
-        """Change the dependencies in the specified file(Only support toml file).
+        """Change the dependencies in specified file(Only support toml file).
 
         Args:
             method: "add" or "remove"
@@ -155,7 +167,7 @@ class DependencyManager:
         for path in DEFAULT_ENV:
             if env_path := cls.ensure_path(path):
                 Info(f"Found virtual environment '{env_path}' but was not"
-                    "activated, packages was installed by this interpreter")
+                     "activated, packages was installed by this interpreter")
                 display_activate_cmd(env_path)
                 return os.path.join(env_path, bin_path, "python")
         return "python"
@@ -173,53 +185,44 @@ class PipManager:
     def __init__(self, executable: str):
         self.cmd = [executable, "-m", "pip"]
 
-    def execute(self, cmd: List[str]):
+    def execute(self, cmd: List[str], check: bool = True):
         """Execute the pip command."""
+        cmd = self.cmd + cmd
         self.set_outputs(
-            subprocess.run(cmd, capture_output=True)
-        ).check_output()
+            subprocess.run(cmd, capture_output=True, universal_newlines=True))
+        if check:
+            self.check_output(cmd)
+        return self
 
-    def install(self, packages: Sequence[str], upgrade: bool = False):
+    def install(self, *packages: str, upgrade: bool = False):
         """Install packages.
 
         Args:
             packages: Packages to install
             upgrade: Upgrade packages
         """
-        cmd = self.cmd + ["install"]
+        cmd = ["install"]
         if upgrade:
             cmd.append("-U")
-        cmd.extend(packages)
-        self.execute(cmd)
+        self.execute([*cmd, *packages])
 
-    def uninstall(self, packages: Sequence[str]):
+    def uninstall(self, *packages: str):
         """Uninstall packages.
 
         Args:
             packages: Packages to uninstall
         """
-        cmd = self.cmd + ["uninstall", "-y"]
-        cmd.extend(packages)
-        self.execute(cmd)
+        self.execute(["uninstall", "-y", *packages])
 
     def set_outputs(self, output: subprocess.CompletedProcess):
         """Set the outputs that to be parse."""
-        self.stdout = self.decode(
-            output.stdout).strip().replace("\r", "").split("\n") \
+        self.stdout = output.stdout.strip().replace("\r\n", "\n").split("\n") \
             if output.stdout else []
-        self.stderr = self.decode(
-            output.stderr).strip().replace("\r", "").split("\n") \
+        self.stderr = output.stderr.strip().replace("\r\n", "\n").split("\n") \
             if output.stderr else []
         return self
 
-    def decode(self, output: bytes):
-        """Decode the output to utf8 or gbk."""
-        try:
-            return output.decode("utf8")
-        except UnicodeDecodeError:
-            return output.decode("gbk")
-
-    def check_output(self):
+    def check_output(self, cmd: List[str]):
         """Check if the pip install or uninstall is successful."""
         for line in self.stdout:
             line = line.strip()
@@ -228,8 +231,45 @@ class PipManager:
             if line.startswith("Successfully"):
                 Success(line)
         if self.stderr:
-            Error("Install/Uninstall packages failed:")
+            Error(f"Run command {' '.join(cmd)} error:")
             Detail("\n".join(self.stderr))
+
+    def parse_list_output(self) -> List[str]:
+        """Parse the pip list output to get the installed packages' name."""
+        return [package.split()[0] for package in self.stdout[2:]]
+
+    def analyze_packages_require(
+            self, *packages: str) -> Dict[str, List[Dict]]:
+        """Analyze the packages require by pip show output, display as tree.
+
+        Args:
+            packages: Packages to analyze
+        Returns:
+            analyzed_packages: Requirement analyzed packages.
+        """
+        self.execute(["show", *packages])
+
+        # format of pip show output:
+        packages_require, name, require = {}, "", []
+        for line in self.stdout:
+            if line.startswith("Name"):
+                name = line.lstrip("Name:").strip()
+            if line.startswith("Requires"):
+                require = line.lstrip("Requires:").strip().split(", ")
+                packages_require[name] = [r for r in require if r]
+                name, requires = "", []
+
+        # parse require tree
+        requires_set = set(packages_require.keys())
+        for name, requires in packages_require.items():
+            for i, require in enumerate(requires):
+                if require in requires_set:
+                    requires_set.remove(require)
+                requires[i] = {require: packages_require.get(require, [])}
+
+        return {
+            name: info for name, info in packages_require.items()
+            if name in requires_set}
 
 
 class ExtEnvBuilder(venv.EnvBuilder):
@@ -266,9 +306,9 @@ class ExtEnvBuilder(venv.EnvBuilder):
             pip = PipManager(context.env_exe)
             if self.upgrade_packages:
                 Info("Upgrading core packages...")
-                pip.install(("pip", "setuptools"), upgrade=True)
+                pip.install("pip", "setuptools", upgrade=True)
             if self.packages:
                 Info("Start installing packages...")
-                pip.install(self.packages)
+                pip.install(*self.packages)
 
         display_activate_cmd(context.env_dir)
