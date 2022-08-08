@@ -10,7 +10,7 @@ class Color:
     color: str
 
     def __init__(self, msg: str, display: bool = True):
-        self.msg = msg.strip(RESET).replace(RESET, RESET + self.color)
+        self.msg = msg.rstrip(RESET).replace(RESET, RESET + self.color)
         if display:
             print(self)
 

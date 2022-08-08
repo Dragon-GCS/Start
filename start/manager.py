@@ -252,7 +252,7 @@ class PipManager:
 
     def parse_list_output(self) -> List[str]:
         """Parse the pip list output to get the installed packages' name."""
-        return [package.split()[0] for package in self.stdout[2:]]
+        return [package.lower().split()[0] for package in self.stdout[2:]]
 
     def analyze_packages_require(
             self, *packages: str) -> List[Dict]:
@@ -269,9 +269,9 @@ class PipManager:
         packages_require, name, require = {}, "", []
         for line in self.stdout:
             if line.startswith("Name"):
-                name = line.lstrip("Name:").strip()
+                name = line.lstrip("Name:").strip().lower()
             if line.startswith("Requires"):
-                require = line.lstrip("Requires:").strip().split(", ")
+                require = line.lstrip("Requires:").strip().lower().split(", ")
                 packages_require[name] = [r for r in require if r]
                 name, requires = "", []
 
