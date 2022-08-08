@@ -1,23 +1,26 @@
 import colorama
 
+from typing import Union
+
 RESET = colorama.Style.RESET_ALL
 
 
-class Color(str):
+class Color:
 
     color: str
 
-    def __init__(self, msg: str):
+    def __init__(self, msg: str, display: bool = True):
         self.msg = msg.strip(RESET).replace(RESET, RESET + self.color)
-        print(self)
+        if display:
+            print(self)
 
     def __str__(self) -> str:
         return f"{self.color}{self.msg}{RESET}"
 
-    def __add__(self, other: str) -> str:
+    def __add__(self, other: Union[str, "Color"]) -> str:
         return f"{self}{other}"
 
-    def __radd__(self, other: str) -> str:
+    def __radd__(self, other: Union[str, "Color"]) -> str:
         return f"{other}{self}"
 
 

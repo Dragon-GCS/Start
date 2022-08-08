@@ -1,7 +1,6 @@
-import os
 import fire
 
-from typing import Dict, List
+from os import path
 
 from start.logger import Detail, Info, Error, Success, Warn
 from start.manager import DependencyManager, ExtEnvBuilder, PipManager
@@ -46,8 +45,8 @@ class Start:
         """
         Info(f"Start {'creating' if project_name == '.' else 'initializing'}"
              f"project: {project_name}")
-        env_path = os.path.join(project_name, vname)
-        if os.path.exists(env_path) and not force:
+        env_path = path.join(project_name, vname)
+        if path.exists(env_path) and not force:
             Error(f"Virtual environment {env_path} already exists,"
                   "use --force to override")
             return
@@ -63,7 +62,7 @@ class Start:
         Template(project_name=project_name).create()
         # modify dependencies in pyproject.toml
         DependencyManager.modify_dependencies(
-            "add", packages, os.path.join(project_name, "pyproject.toml"))
+            "add", packages, path.join(project_name, "pyproject.toml"))
         Success("Finish creating project files.")
 
     def init(
@@ -218,7 +217,10 @@ class Start:
                 toml file now). Only take effect when "dep" or "dev"  is True.
         """
         pip = PipManager(DependencyManager.find_executable())
+
+        status = ""
         if dep or dev:
+            status = "Dependencies" if dep else "Dev-Dependencies"
             if not (config_path := DependencyManager.ensure_path(dependency)):
                 Error(f"Dependency file {dependency} not found")
                 return
@@ -226,29 +228,28 @@ class Start:
                 config_path, dev=dev)
         else:
             packages = pip.execute(["list"]).parse_list_output()
+
         if not tree:
-            Info("Installed packages:")
+            Info(f"Installed({status}) packages:")
             Detail("\n".join("- " + package for package in packages))
-        else:
-            def print_tree(name: str, requires: List[Dict], depth: int = 0):
-                """Display installed packages in a tree structure."""
-                indent = depth * 2
-                Status = Detail if name in packages else Warn
-                if depth == 0:
-                    Status(f"- {name}")
-                elif depth == 1:
-                    Status(f"{' ' * indent}└─{name}")
-                else:
-                    Status(f"  {'│ ' * (depth - 1)}└─{name}")
-                for require in requires:
-                    for require_name, require_requires in require.items():
-                        print_tree(require_name, require_requires, depth + 1)
+            return
 
-            analyzed_packages = pip.analyze_packages_require(*packages)
+        analyzed_packages = pip.analyze_packages_require(*packages)
+        Success("Analysis for installed packages:")
 
-            Success("Analysis for installed packages:")
-            for package, requires in analyzed_packages.items():
-                print_tree(package, requires)
+        Info(pip.execu if pip.execu == "python"
+             else path.basename(path.abspath(pip.execu + "/../../.."))
+             + f"({status})"
+             )
+
+        installed_packages = set(packages)
+        for i, package in enumerate(analyzed_packages):
+            name, dependencies = list(package.items())[0]
+            for branch, tree_string in \
+                pip.generate_dependency_tree(
+                    name, dependencies, i == len(analyzed_packages) - 1):
+                Status = Detail if branch in installed_packages else Warn
+                Detail(tree_string + Status(branch, display=False))
 
 
 def main():

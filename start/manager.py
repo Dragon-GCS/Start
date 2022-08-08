@@ -3,7 +3,7 @@ import subprocess
 import sys
 import venv
 
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, Generator, List, Literal, Optional, Tuple
 from types import SimpleNamespace
 
 import rtoml
@@ -16,6 +16,11 @@ DEFAULT_ENV = [".venv", ".env"]
 # UnicodeDecodeError when some package's meta data contains invalid characters.
 # Refer: https://github.com/python/cpython/issues/50385
 os.environ["PYTHONIOENCODING"] = "utf-8"
+
+BRANCH = "├─"
+END = "└─"
+LINE = "│ "
+INDENT = "  "
 
 
 def display_activate_cmd(env_dir: str):
@@ -184,6 +189,7 @@ class PipManager:
 
     def __init__(self, executable: str):
         self.cmd = [executable, "-m", "pip"]
+        self.execu = executable
 
     def execute(self, cmd: List[str], check: bool = True):
         """Execute the pip command."""
@@ -239,7 +245,7 @@ class PipManager:
         return [package.split()[0] for package in self.stdout[2:]]
 
     def analyze_packages_require(
-            self, *packages: str) -> Dict[str, List[Dict]]:
+            self, *packages: str) -> List[Dict]:
         """Analyze the packages require by pip show output, display as tree.
 
         Args:
@@ -267,9 +273,40 @@ class PipManager:
                     requires_set.remove(require)
                 requires[i] = {require: packages_require.get(require, [])}
 
-        return {
-            name: info for name, info in packages_require.items()
-            if name in requires_set}
+        return [
+            {name: info}
+            for name, info in packages_require.items()
+            if name in requires_set]
+
+    @classmethod
+    def generate_dependency_tree(
+        cls,
+        name: str,
+        dependencies: List[Dict],
+        last_item: bool = False,
+        prev_prefix: str = ""
+    ) -> Generator[Tuple[str, str], None, None]:
+        """Display dependencies as a tree
+
+        Args:
+            name: Current package name.
+            dependencies: Current package's dependencies.
+            last_item: Whether current package is lats item in tree.
+            prev_prefix: Tree prefix of previous level's package
+        Return:
+            Package name and Corresponding string of package in tree.
+        """
+        if prev_prefix.endswith(END):
+            prev_prefix = prev_prefix.replace(END, INDENT)
+        if prev_prefix.endswith(BRANCH):
+            prev_prefix = prev_prefix.replace(BRANCH, LINE)
+        prefix = prev_prefix + (END if last_item else BRANCH)
+        yield name, prefix
+
+        for i, dependency in enumerate(dependencies):
+            for name, sub_dependencies in dependency.items():
+                yield from cls.generate_dependency_tree(
+                    name, sub_dependencies, i == len(dependencies) - 1, prefix)
 
 
 class ExtEnvBuilder(venv.EnvBuilder):
