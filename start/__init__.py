@@ -243,7 +243,7 @@ class Start:
 
         Info(pip.execu if path.basename(pip.execu) == pip.execu
              else path.basename(path.abspath(pip.execu + "/../../.."))
-             + f"{status}"
+             + status
              )
 
         installed_packages = set(packages)

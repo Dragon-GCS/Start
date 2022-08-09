@@ -183,7 +183,7 @@ class PipManager:
     """Parse the pip output to get the install or uninstall information.
 
     Args:
-        output: Raw subprocess.run output.
+        executable: The python executable path
     """
     stdout: List[str]
     stderr: List[str]
