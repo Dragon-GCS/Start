@@ -43,7 +43,7 @@ class Start:
             packages:
                 Packages to install after create the virtual environment
         """
-        Info(f"Start {'creating' if project_name == '.' else 'initializing'}"
+        Info(f"Start {'creating' if project_name != '.' else 'initializing'} "
              f"project: {project_name}")
         env_path = path.join(project_name, vname)
         if path.exists(env_path) and not force:

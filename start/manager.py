@@ -153,7 +153,7 @@ class DependencyManager:
             basename: File or folder name
             parent: Parent directory depth
         """
-        for i in range(parent, -1, -1):
+        for i in range(parent):
             path = os.path.join(os.getcwd(), *[".."] * i, basename)
             if os.path.exists(path):
                 return path
@@ -172,7 +172,7 @@ class DependencyManager:
             return os.path.join(env_path, bin_path, base_interpreter)
         for path in DEFAULT_ENV:
             if env_path := cls.ensure_path(path):
-                Info(f"Found virtual environment '{env_path}' but was not"
+                Info(f"Found virtual environment '{env_path}' but was not "
                      "activated, packages was installed by this interpreter")
                 display_activate_cmd(env_path)
                 return os.path.join(env_path, bin_path, base_interpreter)
