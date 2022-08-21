@@ -1,6 +1,7 @@
 import fire
 
 from os import path
+from typing import Literal
 
 from start.logger import Detail, Info, Error, Success, Warn
 from start.manager import DependencyManager, ExtEnvBuilder, PipManager
@@ -122,12 +123,30 @@ class Start:
         if dependency:
             packages = DependencyManager.load_dependencies(dependency)
         elif file := (DependencyManager.ensure_path("pyproject.toml") or
-                      DependencyManager.ensure_path("pyproject.toml")):
+                      DependencyManager.ensure_path("requirements.txt")):
             packages = DependencyManager.load_dependencies(file)
         else:
             Error("No dependency file found")
             return
         PipManager(DependencyManager.find_executable()).install(*packages)
+
+    def _modify(
+        self,
+        *packages,
+        method: Literal['add', 'remove'],
+        dev: bool = False,
+        dependency: str = "pyproject.toml"
+    ):
+        if not dependency.endswith(".toml"):
+            Warning("Only support toml file now")
+            return
+        pip = PipManager(DependencyManager.find_executable())
+        if method == "add":
+            pip.install(*packages)
+        elif method == "remove":
+            pip.uninstall(*packages)
+        DependencyManager.modify_dependencies(
+            method=method, packages=packages, file=dependency, dev=dev)
 
     def add(
         self,
@@ -146,12 +165,8 @@ class Start:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
         """
-        if not dependency.endswith(".toml"):
-            Warning("Only support toml file now")
-            return
-        PipManager(DependencyManager.find_executable()).install(*packages)
-        DependencyManager.modify_dependencies(
-            method="add", packages=packages, file=dependency, dev=dev)
+        self._modify(
+            *packages, method="add", dev=dev, dependency=dependency)
 
     def remove(
         self,
@@ -170,12 +185,8 @@ class Start:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
         """
-        if not dependency.endswith(".toml"):
-            Warning("Only support toml file now")
-            return
-        PipManager(DependencyManager.find_executable()).uninstall(*packages)
-        DependencyManager.modify_dependencies(
-            method="remove", packages=packages, file=dependency, dev=dev)
+        self._modify(
+            *packages, method="remove", dev=dev, dependency=dependency)
 
     def show(
         self,
@@ -197,7 +208,7 @@ class Start:
 
     def list(
         self,
-        *,
+        *,  # avoid display default value
         tree: bool = False,
         dep: bool = False,
         dev: bool = False,
@@ -220,12 +231,12 @@ class Start:
 
         status = ""
         if dep or dev:
-            status = "(Dependencies)" if dep else "(Dev-Dependencies)"
             if not (config_path := DependencyManager.ensure_path(dependency)):
                 Error(f"Dependency file {dependency} not found")
                 return
+            status = "(Dependencies)" if dep else "(Dev-Dependencies)"
             packages = DependencyManager.load_dependencies(
-                config_path, dev=dev)
+                config_path, dev=dev, neat=tree)
         else:
             packages = pip.execute(["list"]).parse_list_output()
 

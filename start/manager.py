@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 import venv
@@ -54,6 +55,13 @@ def display_activate_cmd(env_dir: str):
     Detail(commands)
 
 
+def neat_package_name(name: str) -> str:
+    """Remove '[]' for optional installed package."""
+    if name.endswith("]"):
+        name = re.sub(r"\[.*?\]$", "", name)
+    return name
+
+
 class DependencyManager:
     """Package manage related functions"""
     @classmethod
@@ -81,26 +89,34 @@ class DependencyManager:
     def load_dependencies(
         cls,
         config_path: str,
-        dev: bool = False
+        dev: bool = False,
+        neat: bool = False
     ) -> List[str]:
         """Try to load dependency list from the config path.
 
         Args:
             config_path: Path to the config file
             dev: Load dev-dependencies if True, otherwise load dependencies
+            neat: remove '[]' in package name that was optional installed
         """
         if config_path.endswith(".toml"):
             with open(config_path, encoding="utf8") as f:
                 config = rtoml.load(f)
                 cls.ensure_config(config)
+                packages = config["project"]["dependencies"]
                 if dev:
-                    return config["tool"]["start"]["dev-dependencies"]
-                return config["project"]["dependencies"]
-        if config_path.endswith(".txt"):
+                    packages = config["tool"]["start"]["dev-dependencies"]
+        elif config_path.endswith(".txt"):
             with open(config_path, encoding="utf8") as f:
-                return f.read().splitlines()
-        Error("Not found dependencies due to unsupported file format")
-        return []
+                packages = f.read().splitlines()
+        else:
+            Error("Not found dependencies due to unsupported file format")
+            packages = []
+
+        if neat:
+            packages = [neat_package_name(p) for p in packages]
+
+        return packages
 
     @classmethod
     def modify_dependencies(
@@ -126,19 +142,20 @@ class DependencyManager:
             config = rtoml.load(f)
             cls.ensure_config(config)
 
+        dependencies: list = config["project"]["dependencies"] if not dev \
+            else config["tool"]["start"]["dev-dependencies"]
+
         if method == "add":
-            dependencies: list = config["project"]["dependencies"] if not dev \
-                else config["tool"]["start"]["dev-dependencies"]
             for package in packages:
                 if package not in dependencies:
                     dependencies.append(package)
             dependencies.sort()
         elif method == "remove":
+            neat_dependencies = [neat_package_name(p) for p in dependencies]
             for package in packages:
-                if not dev and package in config["project"]["dependencies"]:
-                    config["project"]["dependencies"].remove(package)
-                if package in config["tool"]["start"]["dev-dependencies"]:
-                    config["tool"]["start"]["dev-dependencies"].remove(package)
+                if package in neat_dependencies:
+                    dependencies.pop(neat_dependencies.index(package))
+                    neat_dependencies.remove(package)
 
         with open(file, "w", encoding="utf8") as f:
             rtoml.dump(config, f)
