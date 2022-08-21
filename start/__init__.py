@@ -141,12 +141,10 @@ class Start:
             Warning("Only support toml file now")
             return
         pip = PipManager(DependencyManager.find_executable())
-        if method == "add":
-            pip.install(*packages)
-        elif method == "remove":
-            pip.uninstall(*packages)
+        operate = pip.install if method == "add" else pip.uninstall
+        result = operate(*packages)
         DependencyManager.modify_dependencies(
-            method=method, packages=packages, file=dependency, dev=dev)
+            method=method, packages=result, file=dependency, dev=dev)
 
     def add(
         self,
@@ -254,8 +252,7 @@ class Start:
 
         Info(pip.execu if path.basename(pip.execu) == pip.execu
              else path.basename(path.abspath(pip.execu + "/../../.."))
-             + status
-             )
+             + status)
 
         installed_packages = set(packages)
         for i, package in enumerate(analyzed_packages):
