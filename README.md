@@ -188,6 +188,6 @@ FLAGS
 
 ## Changelog
 
-### v0.2.0
+### v0.2
 
 * add: `start show` and `start relist` command
