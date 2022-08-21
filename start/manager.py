@@ -4,7 +4,7 @@ import subprocess
 import sys
 import venv
 
-from typing import Dict, Generator, List, Literal, Optional, Tuple
+from typing import Dict, Generator, Iterable, List, Literal, Optional, Tuple
 from types import SimpleNamespace
 
 import rtoml
@@ -122,7 +122,7 @@ class DependencyManager:
     def modify_dependencies(
         cls,
         method: Literal["add", "remove"],
-        packages: Tuple,
+        packages: Iterable[str],
         file: str,
         dev: bool = False
     ):
@@ -218,25 +218,33 @@ class PipManager:
             self.check_output(cmd)
         return self
 
-    def install(self, *packages: str, upgrade: bool = False):
+    def install(self, *packages: str, upgrade: bool = False) -> List[str]:
         """Install packages.
 
         Args:
             packages: Packages to install
             upgrade: Upgrade packages
+        Returns:
+            packages: Success installed packages
         """
         cmd = ["install"]
         if upgrade:
             cmd.append("-U")
         self.execute([*cmd, *packages])
 
-    def uninstall(self, *packages: str):
+        return [package for line in self.stdout
+                if (package := self.parse_output(line))]
+
+    def uninstall(self, *packages: str) -> List[str]:
         """Uninstall packages.
 
         Args:
             packages: Packages to uninstall
+        Returns:
+            packages: Success uninstalled packages
         """
         self.execute(["uninstall", "-y", *packages])
+        return [*packages]
 
     def set_outputs(self, output: subprocess.CompletedProcess):
         """Set the outputs that to be parse."""
@@ -246,6 +254,7 @@ class PipManager:
         self.stderr = self.decode(
             output.stderr).strip().replace("\r", "").split("\n") \
             if output.stderr else []
+        self.returncode = output.returncode
         return self
 
     def decode(self, output: bytes):
@@ -264,8 +273,17 @@ class PipManager:
             if line.startswith("Successfully"):
                 Success(line)
         if self.stderr:
-            Error(f"Run command {' '.join(cmd)} error:")
+            Error(f"Unexpected result of command: {' '.join(cmd)}")
             Detail("\n".join(self.stderr))
+
+    def parse_output(self, output: str) -> str:
+        """Parse the output of pip to extract the package name."""
+        output = output.strip()
+        if output.startswith("Successfully"):
+            return output.split()[-1].split("-")[0]
+        if output.startswith("Requirement already satisfied"):
+            return output.split()[3].split("-")[0]
+        return ""
 
     def parse_list_output(self) -> List[str]:
         """Parse the pip list output to get the installed packages' name."""
