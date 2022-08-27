@@ -56,7 +56,17 @@ def display_activate_cmd(env_dir: str):
 
 
 def neat_package_name(name: str) -> str:
-    """Remove '[]' for optional installed package, and '<', '>', '=' in name"""
+    """Lower and fix unexpected characters from package name.
+
+    '[optional]': remove
+    '<', '>', '=': split and reserve the first part
+    '_': replace with '-'
+
+    Args:
+        name: Package name
+    Returns:
+        Neat package name
+    """
     if name.endswith("]"):
         name = re.sub(r"\[.*?\]$", "", name)
     if '>' in name:
@@ -65,6 +75,7 @@ def neat_package_name(name: str) -> str:
         name = name.split('<')[0]
     if '=' in name:
         name = name.split('=')[0]
+    name = name.lower().replace("_", "-")
     return name
 
 
@@ -219,9 +230,9 @@ class PipManager:
 
     def execute(self, cmd: List[str]):
         """Execute the pip command."""
-        self.cmd.extend(cmd)
-        self.set_outputs(subprocess.run(self.cmd, capture_output=True))
-        self.show_output()
+        cmd = self.cmd + cmd
+        self.set_outputs(subprocess.run(cmd, capture_output=True))
+        self.show_output(cmd)
         return self
 
     def install(self, *packages: str, upgrade: bool = False) -> List[str]:
@@ -271,7 +282,7 @@ class PipManager:
         except UnicodeDecodeError:
             return output.decode("gbk")
 
-    def show_output(self):
+    def show_output(self, cmd: List[str]):
         """Display the pip command output"""
         for line in self.stdout:
             line = line.strip()
@@ -280,7 +291,7 @@ class PipManager:
             if line.startswith("Successfully"):
                 Success(line)
         if self.stderr:
-            Error(f"Unexpected result of command: {' '.join(self.cmd)}")
+            Error(f"Unexpected result of command: {' '.join(cmd)}")
             Detail("\n".join(self.stderr))
 
     def parse_output(self, output: str) -> List[str]:
@@ -311,10 +322,11 @@ class PipManager:
         packages_require, name, require = {}, "", []
         for line in self.stdout:
             if line.startswith("Name"):
-                name = line.lstrip("Name:").strip().lower()
+                name = line.lstrip("Name:").strip()
+                name = neat_package_name(name)
             if line.startswith("Requires"):
-                require = line.lstrip("Requires:").strip().lower().split(", ")
-                packages_require[name] = [r for r in require if r]
+                require = line.lstrip("Requires:").strip().split(", ")
+                packages_require[name] = [neat_package_name(r) for r in require if r]
                 name, requires = "", []
 
         # parse require tree
