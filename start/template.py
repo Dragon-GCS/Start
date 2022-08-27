@@ -35,7 +35,6 @@ class Test{Camel}(unittest.TestCase):
     pass
 """
 
-
 START_CONFIG_PATH = [
     os.path.join(os.path.expanduser("~"), ".start"),
     os.path.join(os.path.expanduser("~"), ".config", "start"),
@@ -77,12 +76,11 @@ class Template:
         self.write_file(os.path.join("test", "__init__.py"), "")
         self.write_file(
             os.path.join("test", "test_{}.py".format(project_name)),
-            TEST_PY.format(
-                Camel="".join(w.capitalize() for w in project_name.split("_")))
-        )
+            TEST_PY.format(Camel="".join(
+                w.capitalize() for w in project_name.split("_"))))
         self.write_file("setup.py", SETUP_PY)
-        self.write_file(
-            "pyproject.toml", PYPROJECT_TOML.format(name=project_name))
+        self.write_file("pyproject.toml",
+                        PYPROJECT_TOML.format(name=project_name))
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
 

@@ -44,8 +44,8 @@ def display_activate_cmd(env_dir: str):
     }
 
     platform = "Windows" if sys.platform.startswith("win") else "POSIX"
-    bin_path = os.path.join(
-        env_dir, "Scripts" if platform == "Windows" else "bin")
+    bin_path = os.path.join(env_dir,
+                            "Scripts" if platform == "Windows" else "bin")
     scripts = active_scripts[platform]
     Prompt("Select the following command to activate the virtual"
            "environment according to your shell:")
@@ -103,12 +103,10 @@ class DependencyManager:
             config["tool"]["start"]["dev-dependencies"] = []
 
     @classmethod
-    def load_dependencies(
-        cls,
-        config_path: str,
-        dev: bool = False,
-        neat: bool = False
-    ) -> List[str]:
+    def load_dependencies(cls,
+                          config_path: str,
+                          dev: bool = False,
+                          neat: bool = False) -> List[str]:
         """Try to load dependency list from the config path.
 
         Args:
@@ -136,13 +134,11 @@ class DependencyManager:
         return packages
 
     @classmethod
-    def modify_dependencies(
-        cls,
-        method: Literal["add", "remove"],
-        packages: Iterable[str],
-        file: str,
-        dev: bool = False
-    ):
+    def modify_dependencies(cls,
+                            method: Literal["add", "remove"],
+                            packages: Iterable[str],
+                            file: str,
+                            dev: bool = False):
         """Change the dependencies in specified file(Only support toml file).
 
         Args:
@@ -200,7 +196,10 @@ class DependencyManager:
         """Find available executable in the system. If virtual environment
         was activated, return the interpreter path which is in VIRTUAL_ENV
         bin directory, else start will find .venv, .env as env_path. If not
-        find any, return "python"
+        find any, return sys.executable.
+
+        Returns:
+            The path of available interpreter
         """
         base_interpreter = os.path.basename(sys.executable)
         bin_path = "Scripts" if sys.platform.startswith("win") else "bin"
@@ -249,9 +248,10 @@ class PipManager:
             cmd.append("-U")
         self.execute([*cmd, *packages])
 
-        return [package for line in self.stdout
-                for package in self.parse_output(line)
-                if package in packages]
+        return [
+            package for line in self.stdout
+            for package in self.parse_output(line) if package in packages
+        ]
 
     def uninstall(self, *packages: str) -> List[str]:
         """Uninstall packages.
@@ -307,8 +307,7 @@ class PipManager:
         """Parse the pip list output to get the installed packages' name."""
         return [package.lower().split()[0] for package in self.stdout[2:]]
 
-    def analyze_packages_require(
-            self, *packages: str) -> List[Dict]:
+    def analyze_packages_require(self, *packages: str) -> List[Dict]:
         """Analyze the packages require by pip show output, display as tree.
 
         Args:
@@ -326,7 +325,9 @@ class PipManager:
                 name = neat_package_name(name)
             if line.startswith("Requires") and name:
                 requires = line.lstrip("Requires:").strip().split(", ")
-                packages_require[name] = [neat_package_name(r) for r in requires if r]
+                packages_require[name] = [
+                    neat_package_name(r) for r in requires if r
+                ]
 
         # parse require tree
         requires_set = set(packages_require.keys())
@@ -336,19 +337,17 @@ class PipManager:
                     requires_set.remove(require)
                 requires[i] = {require: packages_require.get(require, [])}
 
-        return [
-            {name: info}
-            for name, info in packages_require.items()
-            if name in requires_set]
+        return [{
+            name: info
+        } for name, info in packages_require.items() if name in requires_set]
 
     @classmethod
     def generate_dependency_tree(
-        cls,
-        name: str,
-        dependencies: List[Dict],
-        last_item: bool = False,
-        prev_prefix: str = ""
-    ) -> Generator[Tuple[str, str], None, None]:
+            cls,
+            name: str,
+            dependencies: List[Dict],
+            last_item: bool = False,
+            prev_prefix: str = "") -> Generator[Tuple[str, str], None, None]:
         """Display dependencies as a tree
 
         Args:
@@ -384,7 +383,6 @@ class ExtEnvBuilder(venv.EnvBuilder):
         without_system_packages: Dont give the virtual environment access
             to system packages
     """
-
     def __init__(
         self,
         packages: Tuple = (),
@@ -393,10 +391,9 @@ class ExtEnvBuilder(venv.EnvBuilder):
         without_upgrade: bool = False,
         without_system_packages: bool = False,
     ):
-        super().__init__(
-            clear=force,
-            system_site_packages=not without_system_packages,
-            with_pip=not without_pip)
+        super().__init__(clear=force,
+                         system_site_packages=not without_system_packages,
+                         with_pip=not without_pip)
         self.packages = packages
         self.upgrade_packages = not without_upgrade
 

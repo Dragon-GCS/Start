@@ -1,6 +1,6 @@
 import fire
 
-from os import path
+from os import path, sep
 from typing import Literal
 
 from start.logger import Detail, Info, Error, Success, Warn
@@ -10,17 +10,14 @@ from start.template import Template
 
 class Start:
     """Package manager based on pip and venv """
-
-    def new(
-        self,
-        project_name,
-        *packages,
-        vname: str = ".venv",
-        force: bool = False,
-        without_pip: bool = False,
-        without_upgrade: bool = False,
-        without_system_packages: bool = False
-    ):
+    def new(self,
+            project_name,
+            *packages,
+            vname: str = ".venv",
+            force: bool = False,
+            without_pip: bool = False,
+            without_upgrade: bool = False,
+            without_system_packages: bool = False):
         """Create a new project. Create a virtual environment and install
         specified packages.
 
@@ -56,8 +53,7 @@ class Start:
             force=force,
             without_pip=without_pip,
             without_upgrade=without_upgrade,
-            without_system_packages=without_system_packages
-        ).create(env_path)
+            without_system_packages=without_system_packages).create(env_path)
         Success("Finish creating virtual environment.")
         # Create project directory from template
         Template(project_name=project_name).create()
@@ -66,15 +62,13 @@ class Start:
             "add", packages, path.join(project_name, "pyproject.toml"))
         Success("Finish creating project files.")
 
-    def init(
-        self,
-        *packages,
-        vname: str = ".venv",
-        force: bool = False,
-        without_pip: bool = False,
-        without_upgrade: bool = False,
-        without_system_packages: bool = False
-    ):
+    def init(self,
+             *packages,
+             vname: str = ".venv",
+             force: bool = False,
+             without_pip: bool = False,
+             without_upgrade: bool = False,
+             without_system_packages: bool = False):
         """Use current directory as the project name and create a new project
         at the current directory.
 
@@ -96,19 +90,15 @@ class Start:
             packages:
                 Packages to install after create the virtual environment
         """
-        self.new(
-            ".",
-            *packages,
-            vname=vname,
-            force=force,
-            without_pip=without_pip,
-            without_upgrade=without_upgrade,
-            without_system_packages=without_system_packages)
+        self.new(".",
+                 *packages,
+                 vname=vname,
+                 force=force,
+                 without_pip=without_pip,
+                 without_upgrade=without_upgrade,
+                 without_system_packages=without_system_packages)
 
-    def install(
-        self,
-        dependency: str = ""
-    ):
+    def install(self, dependency: str = ""):
         """Install packages in specified dependency file.
 
         Args:
@@ -130,28 +120,26 @@ class Start:
             return
         PipManager(DependencyManager.find_executable()).install(*packages)
 
-    def _modify(
-        self,
-        *packages,
-        method: Literal['add', 'remove'],
-        dev: bool = False,
-        dependency: str = "pyproject.toml"
-    ):
+    def _modify(self,
+                *packages,
+                method: Literal['add', 'remove'],
+                dev: bool = False,
+                dependency: str = "pyproject.toml"):
         if not dependency.endswith(".toml"):
             Warning("Only support toml file now")
             return
         pip = PipManager(DependencyManager.find_executable())
         operate = pip.install if method == "add" else pip.uninstall
         result = operate(*packages)
-        DependencyManager.modify_dependencies(
-            method=method, packages=result, file=dependency, dev=dev)
+        DependencyManager.modify_dependencies(method=method,
+                                              packages=result,
+                                              file=dependency,
+                                              dev=dev)
 
-    def add(
-        self,
-        *packages,
-        dev: bool = False,
-        dependency: str = "pyproject.toml"
-    ):
+    def add(self,
+            *packages,
+            dev: bool = False,
+            dependency: str = "pyproject.toml"):
         """Install packages and add to the dependency file.
 
         Args:
@@ -163,15 +151,12 @@ class Start:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
         """
-        self._modify(
-            *packages, method="add", dev=dev, dependency=dependency)
+        self._modify(*packages, method="add", dev=dev, dependency=dependency)
 
-    def remove(
-        self,
-        *packages,
-        dev: bool = False,
-        dependency: str = "pyproject.toml"
-    ):
+    def remove(self,
+               *packages,
+               dev: bool = False,
+               dependency: str = "pyproject.toml"):
         """Uninstall packages and remove from the dependency file.
 
         Args:
@@ -183,13 +168,9 @@ class Start:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
         """
-        self._modify(
-            *packages, method="remove", dev=dev, dependency=dependency)
+        self._modify(*packages, method="remove", dev=dev, dependency=dependency)
 
-    def show(
-        self,
-        *packages
-    ):
+    def show(self, *packages):
         """Same as "pip show" command.
 
         Args:
@@ -205,13 +186,12 @@ class Start:
             Error("\n".join(pip.stderr))
 
     def list(
-        self,
-        *,  # avoid display default value
-        tree: bool = False,
-        dep: bool = False,
-        dev: bool = False,
-        dependency: str = "pyproject.toml"
-    ):
+            self,
+            *,  # avoid display default value
+            tree: bool = False,
+            dep: bool = False,
+            dev: bool = False,
+            dependency: str = "pyproject.toml"):
         """Display all installed packages.
 
         Args:
@@ -233,8 +213,9 @@ class Start:
                 Error(f"Dependency file {dependency} not found")
                 return
             status = "(Dependencies)" if dep else "(Dev-Dependencies)"
-            packages = DependencyManager.load_dependencies(
-                config_path, dev=dev, neat=tree)
+            packages = DependencyManager.load_dependencies(config_path,
+                                                           dev=dev,
+                                                           neat=tree)
         else:
             packages = pip.execute(["list"]).parse_list_output()
 
@@ -250,9 +231,8 @@ class Start:
         analyzed_packages = pip.analyze_packages_require(*packages)
         Success("Analysis for installed packages:")
 
-        Info(pip.execu if path.basename(pip.execu) == pip.execu
-             else path.basename(path.abspath(pip.execu + "/../../.."))
-             + status)
+        Info(pip.execu.split(sep)[-4] + status
+             if sep in pip.execu else pip.execu)    # yapf: disable
 
         installed_packages = set(packages)
         for i, package in enumerate(analyzed_packages):
