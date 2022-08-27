@@ -198,7 +198,7 @@ class Start:
 
         """
         pip = PipManager(DependencyManager.find_executable())
-        pip.execute(["show", *packages], check=False)
+        pip.execute(["show", *packages])
         if pip.stdout:
             Detail("\n".join(pip.stdout))
         if pip.stderr:

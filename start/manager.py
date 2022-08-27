@@ -56,9 +56,15 @@ def display_activate_cmd(env_dir: str):
 
 
 def neat_package_name(name: str) -> str:
-    """Remove '[]' for optional installed package."""
+    """Remove '[]' for optional installed package, and '<', '>', '=' in name"""
     if name.endswith("]"):
         name = re.sub(r"\[.*?\]$", "", name)
+    if '>' in name:
+        name = name.split('>')[0]
+    if '<' in name:
+        name = name.split('<')[0]
+    if '=' in name:
+        name = name.split('=')[0]
     return name
 
 
@@ -211,13 +217,11 @@ class PipManager:
         self.cmd = [executable, "-m", "pip"]
         self.execu = executable
 
-    def execute(self, cmd: List[str], check: bool = True):
+    def execute(self, cmd: List[str]):
         """Execute the pip command."""
-        cmd = self.cmd + cmd
-        self.set_outputs(
-            subprocess.run(cmd, capture_output=True))
-        if check:
-            self.check_output(cmd)
+        self.cmd.extend(cmd)
+        self.set_outputs(subprocess.run(self.cmd, capture_output=True))
+        self.show_output()
         return self
 
     def install(self, *packages: str, upgrade: bool = False) -> List[str]:
@@ -235,7 +239,8 @@ class PipManager:
         self.execute([*cmd, *packages])
 
         return [package for line in self.stdout
-                if (package := self.parse_output(line))]
+                for package in self.parse_output(line)
+                if package in packages]
 
     def uninstall(self, *packages: str) -> List[str]:
         """Uninstall packages.
@@ -266,8 +271,8 @@ class PipManager:
         except UnicodeDecodeError:
             return output.decode("gbk")
 
-    def check_output(self, cmd: List[str]):
-        """Check if the pip install or uninstall is successful."""
+    def show_output(self):
+        """Display the pip command output"""
         for line in self.stdout:
             line = line.strip()
             if line.startswith("Requirement already satisfied"):
@@ -275,17 +280,17 @@ class PipManager:
             if line.startswith("Successfully"):
                 Success(line)
         if self.stderr:
-            Error(f"Unexpected result of command: {' '.join(cmd)}")
+            Error(f"Unexpected result of command: {' '.join(self.cmd)}")
             Detail("\n".join(self.stderr))
 
-    def parse_output(self, output: str) -> str:
+    def parse_output(self, output: str) -> List[str]:
         """Parse the output of pip to extract the package name."""
         output = output.strip()
-        if output.startswith("Successfully"):
-            return output.split()[-1].split("-")[0]
         if output.startswith("Requirement already satisfied"):
-            return output.split()[3].split("-")[0]
-        return ""
+            return [neat_package_name(output.split()[3])]
+        if output.startswith("Successfully installed"):
+            return [name.rsplit("-", 1)[0] for name in output.split()[2:]]
+        return []
 
     def parse_list_output(self) -> List[str]:
         """Parse the pip list output to get the installed packages' name."""
