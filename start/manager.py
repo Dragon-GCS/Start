@@ -319,15 +319,14 @@ class PipManager:
         self.execute(["show", *packages])
 
         # format of pip show output:
-        packages_require, name, require = {}, "", []
+        packages_require, name = {}, ""
         for line in self.stdout:
             if line.startswith("Name"):
                 name = line.lstrip("Name:").strip()
                 name = neat_package_name(name)
-            if line.startswith("Requires"):
-                require = line.lstrip("Requires:").strip().split(", ")
-                packages_require[name] = [neat_package_name(r) for r in require if r]
-                name, requires = "", []
+            if line.startswith("Requires") and name:
+                requires = line.lstrip("Requires:").strip().split(", ")
+                packages_require[name] = [neat_package_name(r) for r in requires if r]
 
         # parse require tree
         requires_set = set(packages_require.keys())
