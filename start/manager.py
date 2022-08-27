@@ -134,11 +134,11 @@ class DependencyManager:
             file: File name
             dev: Add packages as development dependency
         """
-        if not cls.ensure_path(file):
+        if not (file_path := cls.ensure_path(file)):
             Error("No dependency file found")
             return
 
-        with open(file, encoding="utf8") as f:
+        with open(file_path, encoding="utf8") as f:
             config = rtoml.load(f)
             cls.ensure_config(config)
 
@@ -157,10 +157,10 @@ class DependencyManager:
                     dependencies.pop(neat_dependencies.index(package))
                     neat_dependencies.remove(package)
 
-        with open(file, "w", encoding="utf8") as f:
+        with open(file_path, "w", encoding="utf8") as f:
             rtoml.dump(config, f)
 
-        Success("Updated dependency file")
+        Success("Updated dependency file: " + file_path)
 
     @classmethod
     def ensure_path(cls, basename: str, parent: int = 2) -> Optional[str]:
@@ -169,6 +169,8 @@ class DependencyManager:
         Args:
             basename: File or folder name
             parent: Parent directory depth
+        Returns:
+            the absolute path of the file or folder if found, otherwise None
         """
         for i in range(parent):
             path = os.path.join(os.getcwd(), *[".."] * i, basename)
