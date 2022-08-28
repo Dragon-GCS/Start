@@ -7,7 +7,7 @@ SETUP_PY = """
 from setuptools import setup\n
 if __name__ == '__main__':
     setup()
-"""
+""".lstrip()
 PYPROJECT_TOML = """
 [build-system]
 build-backend = "setuptools.build_meta"
@@ -23,17 +23,17 @@ email = "example@example.com"\n
 packages = ["{name}"]\n
 [tool.start]
 dev-dependencies = []
-"""
+""".lstrip()
 MAIN_PY = """
 import {}\n
 if __name__ == '__main__':
     print("Hello, world!")
-"""
+""".lstrip()
 TEST_PY = """
 import unittest\n
 class Test{Camel}(unittest.TestCase):
     pass
-"""
+""".lstrip()
 
 START_CONFIG_PATH = [
     os.path.join(os.path.expanduser("~"), ".start"),
