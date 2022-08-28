@@ -59,7 +59,7 @@ def neat_package_name(name: str) -> str:
     """Lower and fix unexpected characters from package name.
 
     '[optional]': remove
-    '<', '>', '=': split and reserve the first part
+    '!', '<', '>', '=': split once and take the first part
     '_': replace with '-'
 
     Args:
@@ -69,12 +69,8 @@ def neat_package_name(name: str) -> str:
     """
     if name.endswith("]"):
         name = re.sub(r"\[.*?\]$", "", name)
-    if '>' in name:
-        name = name.split('>')[0]
-    if '<' in name:
-        name = name.split('<')[0]
-    if '=' in name:
-        name = name.split('=')[0]
+
+    name = re.split(r"[!<>=]", name, 1)[0]
     name = name.lower().replace("_", "-")
     return name
 
@@ -248,9 +244,13 @@ class PipManager:
             cmd.append("-U")
         self.execute([*cmd, *packages])
 
-        return [
+        installed_packages = set([
             package for line in self.stdout
-            for package in self.parse_output(line) if package in packages
+            for package in self.parse_output(line)
+        ])
+        return [
+            package for package in packages
+            if neat_package_name(package) in installed_packages
         ]
 
     def uninstall(self, *packages: str) -> List[str]:
