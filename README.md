@@ -194,6 +194,10 @@ FLAGS
 
 ## Changelog
 
+### v0.3.1
+
+* feat: without-template exclude pyproject.toml
+
 ### v0.3
 
 * add: `--skip-template` flag in `start new` and `start init`

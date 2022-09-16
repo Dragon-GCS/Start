@@ -79,16 +79,15 @@ class Template:
             TEST_PY.format(Camel="".join(
                 w.capitalize() for w in project_name.split("_"))))
         self.write_file("setup.py", SETUP_PY)
-        self.write_file("pyproject.toml",
-                        PYPROJECT_TOML.format(name=project_name))
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
 
-    def create(self):
+    def create(self, skip_template: bool = False):
         """Create project template at specified path.
 
         Args:
             path: Path to create the template
+            skip_template: Skip template creation
         """
         current_dir = os.getcwd()
 
@@ -97,10 +96,13 @@ class Template:
         else:
             os.chdir(self.project_name)
 
-        for config_path in START_CONFIG_PATH:
-            if os.path.exists(os.path.join(config_path, "template")):
-                self.create_by_template()
-        else:
-            self.create_default()
+        if not skip_template:
+            for config_path in START_CONFIG_PATH:
+                if os.path.exists(os.path.join(config_path, "template")):
+                    self.create_by_template()
+            else:
+                self.create_default()
 
+        self.write_file("pyproject.toml",
+                        PYPROJECT_TOML.format(name=self.project_name))
         os.chdir(current_dir)
