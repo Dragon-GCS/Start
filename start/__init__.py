@@ -17,6 +17,7 @@ class Start:
             force: bool = False,
             without_pip: bool = False,
             without_upgrade: bool = False,
+            without_template: bool = False,
             without_system_packages: bool = False):
         """Create a new project. Create a virtual environment and install
         specified packages.
@@ -35,6 +36,9 @@ class Start:
                 Default to upgrade core package(pip & setuptools) and
                 all packages to install in the virtual environment,
                 add "--without-upgrade" to skip this.
+            without_template:
+                Default to create a template files, add
+                "--without-template" to skip this.
             without_system_packages:
                 Default to give the virtual environment access to system
                 packages, add "--without-system-packages" to skip this.
@@ -56,7 +60,8 @@ class Start:
             without_system_packages=without_system_packages).create(env_path)
         Success("Finish creating virtual environment.")
         # Create project directory from template
-        Template(project_name=project_name).create()
+        if not without_template:
+            Template(project_name=project_name).create()
         # modify dependencies in pyproject.toml
         DependencyManager.modify_dependencies(
             "add", packages, path.join(project_name, "pyproject.toml"))
@@ -68,6 +73,7 @@ class Start:
              force: bool = False,
              without_pip: bool = False,
              without_upgrade: bool = False,
+            without_template: bool = False,
              without_system_packages: bool = False):
         """Use current directory as the project name and create a new project
         at the current directory.
@@ -84,6 +90,9 @@ class Start:
                 Default to upgrade core package(pip & setuptools) and
                 all packages to install in the virtual environment,
                 add "--without-upgrade" to skip this.
+            without_template:
+                Default to create a template files, add
+                "--without-template" to skip this.
             without_system_packages:
                 Default to give the virtual environment access to system
                 packages, add "--without-system-packages" to skip this.
@@ -96,6 +105,7 @@ class Start:
                  force=force,
                  without_pip=without_pip,
                  without_upgrade=without_upgrade,
+                 without_template=without_template,
                  without_system_packages=without_system_packages)
 
     def install(self, dependency: str = ""):

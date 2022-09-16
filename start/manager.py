@@ -44,13 +44,14 @@ def display_activate_cmd(env_dir: str):
     }
 
     platform = "Windows" if sys.platform.startswith("win") else "POSIX"
+    prefix = 'source ' if sys.platform.startswith("win") else ''
     bin_path = os.path.join(env_dir,
                             "Scripts" if platform == "Windows" else "bin")
     scripts = active_scripts[platform]
     Prompt("Select the following command to activate the virtual"
            "environment according to your shell:")
     commands = "\n".join(
-        f"{shell:10}: {os.path.abspath(os.path.join(bin_path, script))}"
+        f"{shell:10}: {prefix}{os.path.abspath(os.path.join(bin_path, script))}"
         for shell, script in scripts.items())
     Detail(commands)
 

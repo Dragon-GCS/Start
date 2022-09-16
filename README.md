@@ -43,6 +43,9 @@ FLAGS
         Type: bool
         Default to upgrade core package(pip & setuptools) and all packages to install in the
         virtual environment, add "--without-upgrade" to skip this.
+    --without_template:
+        Default to create a template files, add
+        "--without-template" to skip this.
     --without_system_packages=WITHOUT_SYSTEM_PACKAGES
         Type: bool
         Default to give the virtual environment access to system packages, add
@@ -78,6 +81,9 @@ FLAGS
         Type: bool
         Default to upgrade core package(pip & setuptools) and all packages to install in the
         virtual environment, add "--without-upgrade" to skip this.
+    --without_template:
+        Default to create a template files, add
+        "--without-template" to skip this.
     --without_system_packages=WITHOUT_SYSTEM_PACKAGES
         Type: bool
         Default to give the virtual environment access to system packages, add
@@ -187,6 +193,51 @@ FLAGS
 ```
 
 ## Changelog
+
+### v0.3
+
+* add: `--skip-template` flag in `start new` and `start init`
+* fix: activate command on unix platform
+
+### v0.2.8
+
+* fix: cant record package with special format
+* fix: unexpected blank line in template
+* fix: package name neat, error cmd in <list> command
+
+### v0.2.7
+
+* fix: add unexpected package to toml file
+* refactor: remove useless argument in PipManager.execute
+* refactor: rename PipManager.check_output() to show_output()
+
+### v0.2.6
+
+* fix: dependency file check error
+
+### v0.2.5
+
+* fix: Error adding package to toml file when package was not installed correctly
+* fix: error parsing optional installed package name
+* fix: error when not found packages
+* fix: executable find order
+
+### v0.2.4
+
+* fix: bug when print some word start with 'm'
+* fix: change all package name to lower
+
+### v0.2.3
+
+* fix: sys.executable as default interpreter
+
+### v0.2.2
+
+* fix: decode error of subprocess' output
+
+### v0.2.1
+
+* fix: wrong display of last branch of dependencies tree
 
 ### v0.2
 
