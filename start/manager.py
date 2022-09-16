@@ -44,7 +44,7 @@ def display_activate_cmd(env_dir: str):
     }
 
     platform = "Windows" if sys.platform.startswith("win") else "POSIX"
-    prefix = 'source ' if sys.platform.startswith("win") else ''
+    prefix = "source " if platform == "POSIX" else ""
     bin_path = os.path.join(env_dir,
                             "Scripts" if platform == "Windows" else "bin")
     scripts = active_scripts[platform]
