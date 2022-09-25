@@ -13,6 +13,7 @@ class Start:
     def new(self,
             project_name,
             *packages,
+            require: str = "",
             vname: str = ".venv",
             force: bool = False,
             without_pip: bool = False,
@@ -25,6 +26,8 @@ class Start:
         Args:
             project_name:
                 Name of the project
+            require:
+                Dependency file name. Toml file or plain text file.
             vname:
                 Name of the virtual environment, default is ".venv"
             force:
@@ -53,7 +56,8 @@ class Start:
                   "use --force to override")
             return
         ExtEnvBuilder(
-            packages=packages,
+            packages=list(packages),
+            require=require,
             force=force,
             without_pip=without_pip,
             without_upgrade=without_upgrade,
@@ -68,11 +72,12 @@ class Start:
 
     def init(self,
              *packages,
+             require: str = "",
              vname: str = ".venv",
              force: bool = False,
              without_pip: bool = False,
              without_upgrade: bool = False,
-            without_template: bool = False,
+             without_template: bool = False,
              without_system_packages: bool = False):
         """Use current directory as the project name and create a new project
         at the current directory.
@@ -80,6 +85,8 @@ class Start:
         Args:
             vname:
                 Name of the virtual environment, default is ".venv"
+            require:
+                Dependency file name. Toml file or plain text file.
             force:
                 Remove the existing virtual environment if it exists
             without_pip:
@@ -100,6 +107,7 @@ class Start:
         """
         self.new(".",
                  *packages,
+                 require=require,
                  vname=vname,
                  force=force,
                  without_pip=without_pip,

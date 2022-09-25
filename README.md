@@ -10,9 +10,9 @@ Install from github
 >>> pip install start@git+https://github.com/Dragon-GCS/Start
 ```
 
-> `start` is a default alias in **powershell**, use **`Remove-Item alias:start -Force`** to remove alias before use `start`
+> `start` is a default alias in **powershell**, use **`Remove-Item alias:start -Force`*- to remove alias before use `start`
 >
-> **Optional:** Add `Remove-Item alias:start -Force` in powershell profile
+> **Optional:*- Add `Remove-Item alias:start -Force` in powershell profile
 
 ## Usage
 
@@ -33,6 +33,9 @@ FLAGS
     --vname=VNAME
         Type: str
         Name of the virtual environment, default is ".venv"
+    --require=REQUIRE:
+        Type: str
+        Dependency file name. Toml file or plain text file.
     --force=FORCE
         Type: bool
         Remove the existing virtual environment if it exists
@@ -71,6 +74,9 @@ FLAGS
     --vname=VNAME
         Type: str
         Name of the virtual environment, default is ".venv"
+    --require=REQUIRE:
+        Type: str
+        Dependency file name. Toml file or plain text file.
     --force=FORCE
         Type: bool
         Remove the existing virtual environment if it exists
@@ -194,55 +200,59 @@ FLAGS
 
 ## Changelog
 
+### v0.3.2
+
+- feat: add `--require` flag to install package by dependency file when init project
+
 ### v0.3.1
 
-* feat: without-template exclude pyproject.toml
+- feat: without-template exclude pyproject.toml
 
 ### v0.3
 
-* add: `--skip-template` flag in `start new` and `start init`
-* fix: activate command on unix platform
+- add: `--skip-template` flag in `start new` and `start init`
+- fix: activate command on unix platform
 
 ### v0.2.8
 
-* fix: cant record package with special format
-* fix: unexpected blank line in template
-* fix: package name neat, error cmd in <list> command
+- fix: cant record package with special format
+- fix: unexpected blank line in template
+- fix: package name neat, error cmd in <list> command
 
 ### v0.2.7
 
-* fix: add unexpected package to toml file
-* refactor: remove useless argument in PipManager.execute
-* refactor: rename PipManager.check_output() to show_output()
+- fix: add unexpected package to toml file
+- refactor: remove useless argument in PipManager.execute
+- refactor: rename PipManager.check_output() to show_output()
 
 ### v0.2.6
 
-* fix: dependency file check error
+- fix: dependency file check error
 
 ### v0.2.5
 
-* fix: Error adding package to toml file when package was not installed correctly
-* fix: error parsing optional installed package name
-* fix: error when not found packages
-* fix: executable find order
+- fix: Error adding package to toml file when package was not installed correctly
+- fix: error parsing optional installed package name
+- fix: error when not found packages
+- fix: executable find order
 
 ### v0.2.4
 
-* fix: bug when print some word start with 'm'
-* fix: change all package name to lower
+- fix: bug when print some word start with 'm'
+- fix: change all package name to lower
 
 ### v0.2.3
 
-* fix: sys.executable as default interpreter
+- fix: sys.executable as default interpreter
 
 ### v0.2.2
 
-* fix: decode error of subprocess' output
+- fix: decode error of subprocess' output
 
 ### v0.2.1
 
-* fix: wrong display of last branch of dependencies tree
+- fix: wrong display of last branch of dependencies tree
 
 ### v0.2
 
-* add: `start show` and `start relist` command
+- add: `start show` and `start relist` command

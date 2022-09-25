@@ -377,6 +377,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
 
     Args:
         packages: Packages to install after create the virtual environment
+        require: Dependency file name, toml file or plain text file.
         force: Remove the existing virtual environment if it exists
         without_pip: Dont install pip in the virtual environment
         without_upgrade: Dont upgrade core package(pip & setuptools) and
@@ -386,7 +387,8 @@ class ExtEnvBuilder(venv.EnvBuilder):
     """
     def __init__(
         self,
-        packages: Tuple = (),
+        packages: List[str] = [],
+        require: str = "",
         force: bool = False,
         without_pip: bool = False,
         without_upgrade: bool = False,
@@ -395,6 +397,8 @@ class ExtEnvBuilder(venv.EnvBuilder):
         super().__init__(clear=force,
                          system_site_packages=not without_system_packages,
                          with_pip=not without_pip)
+        if require:
+            packages.extend(DependencyManager.load_dependencies(require))
         self.packages = packages
         self.upgrade_packages = not without_upgrade
 
