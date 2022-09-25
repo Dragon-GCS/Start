@@ -243,6 +243,7 @@ class PipManager:
         cmd = ["install"]
         if upgrade:
             cmd.append("-U")
+        Info("Start install packages: " + ", ".join(packages))
         self.execute([*cmd, *packages])
 
         installed_packages = set([

@@ -200,6 +200,10 @@ FLAGS
 
 ## Changelog
 
+### v0.3.3
+
+- feat: add prompt message when start install package
+
 ### v0.3.2
 
 - feat: add `--require` flag to install package by dependency file when init project
