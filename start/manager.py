@@ -120,7 +120,7 @@ class DependencyManager:
                     packages = config["tool"]["start"]["dev-dependencies"]
         elif config_path.endswith(".txt"):
             with open(config_path, encoding="utf8") as f:
-                packages = f.read().splitlines()
+                packages = [line.strip() for line in f if line.strip()[0] not in "#-/!"]
         else:
             Error("Not found dependencies due to unsupported file format")
             packages = []
