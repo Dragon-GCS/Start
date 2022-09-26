@@ -55,8 +55,9 @@ class Start:
             Error(f"Virtual environment {env_path} already exists,"
                   "use --force to override")
             return
+        packages = list(packages)
         ExtEnvBuilder(
-            packages=list(packages),
+            packages=packages,
             require=require,
             force=force,
             without_pip=without_pip,
