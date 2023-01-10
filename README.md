@@ -46,9 +46,8 @@ FLAGS
         Type: bool
         Default to upgrade core package(pip & setuptools) and all packages to install in the
         virtual environment, add "--without-upgrade" to skip this.
-    --without_template:
-        Default to create a template files, add
-        "--without-template" to skip this.
+    with_template:
+        Add "--without_template" to create template files
     --without_system_packages=WITHOUT_SYSTEM_PACKAGES
         Type: bool
         Default to give the virtual environment access to system packages, add
@@ -87,9 +86,8 @@ FLAGS
         Type: bool
         Default to upgrade core package(pip & setuptools) and all packages to install in the
         virtual environment, add "--without-upgrade" to skip this.
-    --without_template:
-        Default to create a template files, add
-        "--without-template" to skip this.
+    with_template:
+        Add "--without_template" to create template files
     --without_system_packages=WITHOUT_SYSTEM_PACKAGES
         Type: bool
         Default to give the virtual environment access to system packages, add
@@ -199,6 +197,11 @@ FLAGS
 ```
 
 ## Changelog
+
+### v0.3.4
+
+- feat: replace without_template with with_template, default not to create template files
+- fix: rename template folder `test` -> `tests`
 
 ### v0.3.3
 
