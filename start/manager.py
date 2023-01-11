@@ -168,7 +168,7 @@ class DependencyManager:
                     neat_dependencies.remove(package)
 
         with open(file_path, "w", encoding="utf8") as f:
-            rtoml.dump(config, f)
+            rtoml.dump(config, f, True)
 
         Success("Updated dependency file: " + file_path)
 
