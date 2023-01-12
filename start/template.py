@@ -72,17 +72,18 @@ class Template:
         self.create_folder(project_name)
         self.write_file(os.path.join(project_name, "__init__.py"), "")
 
-        self.create_folder("test")
-        self.write_file(os.path.join("test", "__init__.py"), "")
+        tests_folder = "tests"
+        self.create_folder(tests_folder)
+        self.write_file(os.path.join(tests_folder, "__init__.py"), "")
         self.write_file(
-            os.path.join("test", "test_{}.py".format(project_name)),
+            os.path.join(tests_folder, "test_{}.py".format(project_name)),
             TEST_PY.format(Camel="".join(
                 w.capitalize() for w in project_name.split("_"))))
         self.write_file("setup.py", SETUP_PY)
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
 
-    def create(self, skip_template: bool = False):
+    def create(self, with_template: bool = False):
         """Create project template at specified path.
 
         Args:
@@ -96,7 +97,7 @@ class Template:
         else:
             os.chdir(self.project_name)
 
-        if not skip_template:
+        if with_template:
             for config_path in START_CONFIG_PATH:
                 if os.path.exists(os.path.join(config_path, "template")):
                     self.create_by_template()

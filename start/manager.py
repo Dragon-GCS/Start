@@ -86,18 +86,18 @@ class DependencyManager:
         Args:
             config: Config dict, parse from toml file
         """
-        if "project" not in config:
-            config["project"] = {"dependencies": []}
-        if "tool" not in config:
-            config["tool"] = {"start": {"dev-dependencies": []}}
-        if "start" not in config["tool"]:
-            config["tool"]["start"] = {"dev-dependencies": []}
+        if not config.get("project"):
+            config["project"] = {"dependencies": [], "optional-dependencies": {"dev": []}}
+        if not config["project"].get("dependencies"):
+            config["project"]["dependencies"] = {}
+        if not config["project"].get("optional-dependencies"):
+            config["project"]["optional-dependencies"] = {"dev": []}
         if not isinstance(config["project"]["dependencies"], list):
             Error("project.dependencies is not a list, start fix it.")
             config["project"]["dependencies"] = []
-        if not isinstance(config["tool"]["start"]["dev-dependencies"], list):
+        if not isinstance(config["project"]["optional-dependencies"]["dev"], list):
             Error("tool.start.dev-dependencies is not a list, start fix it.")
-            config["tool"]["start"]["dev-dependencies"] = []
+            config["project"]["optional-dependencies"]["dev"] = []
 
     @classmethod
     def load_dependencies(cls,
@@ -117,7 +117,7 @@ class DependencyManager:
                 cls.ensure_config(config)
                 packages = config["project"]["dependencies"]
                 if dev:
-                    packages = config["tool"]["start"]["dev-dependencies"]
+                    packages = config["project"]["optional-dependencies"]["dev"]
         elif config_path.endswith(".txt"):
             with open(config_path, encoding="utf8") as f:
                 packages = [line.strip() for line in f if line.strip()[0] not in "#-/!"]
@@ -153,7 +153,7 @@ class DependencyManager:
             cls.ensure_config(config)
 
         dependencies: list = config["project"]["dependencies"] if not dev \
-            else config["tool"]["start"]["dev-dependencies"]
+            else config["project"]["optional-dependencies"]["dev"]
 
         if method == "add":
             for package in packages:
@@ -168,7 +168,7 @@ class DependencyManager:
                     neat_dependencies.remove(package)
 
         with open(file_path, "w", encoding="utf8") as f:
-            rtoml.dump(config, f)
+            rtoml.dump(config, f, pretty=True)
 
         Success("Updated dependency file: " + file_path)
 

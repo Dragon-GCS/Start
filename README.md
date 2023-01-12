@@ -10,9 +10,9 @@ Install from github
 >>> pip install start@git+https://github.com/Dragon-GCS/Start
 ```
 
-> `start` is a default alias in **powershell**, use **`Remove-Item alias:start -Force`*- to remove alias before use `start`
+> `start` is a default alias in **powershell**, use **`Remove-Item alias:start -Force`** to remove alias before use `start`
 >
-> **Optional:*- Add `Remove-Item alias:start -Force` in powershell profile
+> **Optional:** Add `Remove-Item alias:start -Force` in powershell profile
 
 ## Usage
 
@@ -41,18 +41,17 @@ FLAGS
         Remove the existing virtual environment if it exists
     --without_pip=WITHOUT_PIP
         Type: bool
-        Default to install pip in the virtual environment, add "--without-pip" to skip this.
+        Default to install pip in the virtual environment, add "--without_pip" to skip this.
     --without_upgrade=WITHOUT_UPGRADE
         Type: bool
         Default to upgrade core package(pip & setuptools) and all packages to install in the
-        virtual environment, add "--without-upgrade" to skip this.
-    --without_template:
-        Default to create a template files, add
-        "--without-template" to skip this.
+        virtual environment, add "--without_upgrade" to skip this.
+    --with_template=WITH_TEMPLATE:
+        Add "--with_template" to create template files
     --without_system_packages=WITHOUT_SYSTEM_PACKAGES
         Type: bool
         Default to give the virtual environment access to system packages, add
-        "--without-system-packages" to skip this.
+        "--without_system_packages" to skip this.
 ```
 
 ### `start new`
@@ -82,18 +81,17 @@ FLAGS
         Remove the existing virtual environment if it exists
     --without_pip=WITHOUT_PIP
         Type: bool
-        Default to install pip in the virtual environment, add "--without-pip" to skip this.
+        Default to install pip in the virtual environment, add "--without_pip" to skip this.
     --without_upgrade=WITHOUT_UPGRADE
         Type: bool
         Default to upgrade core package(pip & setuptools) and all packages to install in the
-        virtual environment, add "--without-upgrade" to skip this.
-    --without_template:
-        Default to create a template files, add
-        "--without-template" to skip this.
+        virtual environment, add "--without_upgrade" to skip this.
+    --with_template=WITH_TEMPLATE:
+        Add "--with_template" to create template files
     --without_system_packages=WITHOUT_SYSTEM_PACKAGES
         Type: bool
         Default to give the virtual environment access to system packages, add
-        "--without-system-packages" to skip this.
+        "--without_system_packages" to skip this.
 ```
 
 ### `start install`
@@ -199,6 +197,11 @@ FLAGS
 ```
 
 ## Changelog
+
+### v0.3.4
+
+- feat: replace without_template with with_template, default not to create template files
+- fix: rename template folder `test` -> `tests`
 
 ### v0.3.3
 
