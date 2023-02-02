@@ -9,7 +9,10 @@ from start.template import Template
 
 
 class Start:
-    """Package manager based on pip and venv """
+    """Package manager based on pip and venv
+
+    Commands: new, init, install, add, remove, show, list, install
+    """
     def new(self,
             project_name,
             *packages,
