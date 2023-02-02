@@ -42,8 +42,9 @@ START_CONFIG_PATH = [
 
 
 class Template:
-    def __init__(self, project_name: str):
+    def __init__(self, project_name: str, vname: str):
         self.project_name = project_name
+        self.vname = vname
 
     @classmethod
     def write_file(cls, file_path: str, content: str):
@@ -82,6 +83,8 @@ class Template:
         self.write_file("setup.py", SETUP_PY)
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
+        if os.environ.pop("HAS_GIT", None):
+            self.write_file(".gitignore", self.vname + "\n")
 
     def create(self, with_template: bool = False):
         """Create project template at specified path.

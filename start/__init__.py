@@ -64,7 +64,7 @@ class Start:
             without_system_packages=without_system_packages).create(env_path)
         Success("Finish creating virtual environment.")
         # Create project directory from template
-        Template(project_name=project_name).create(with_template)
+        Template(project_name=project_name, vname=vname).create(with_template)
         # modify dependencies in pyproject.toml
         DependencyManager.modify_dependencies(
             "add", packages, path.join(project_name, "pyproject.toml"))

@@ -198,6 +198,10 @@ FLAGS
 
 ## Changelog
 
+### v0.4
+
+- feat: check if git available and init new project as a repo
+
 ### v0.3.4
 
 - feat: replace without_template with with_template, default not to create template files
