@@ -198,6 +198,10 @@ FLAGS
 
 ## Changelog
 
+### v0.4.1
+
+- fix: error display package name cause by str.rstrip remove the 'm' character
+
 ### v0.4
 
 - feat: check if git available and init new project as a repo
