@@ -12,6 +12,7 @@ import rtoml
 from start.logger import Detail, Info, Success, Prompt, Error, Warn
 
 
+# Default virtual environment directory names for searching.
 DEFAULT_ENV = [".venv", ".env"]
 # subprocess use gbk in PIPE decoding and can't to change, due to
 # UnicodeDecodeError when some package's meta data contains invalid characters.
@@ -74,6 +75,17 @@ def neat_package_name(name: str) -> str:
     name = re.split(r"[!<>=]", name, 1)[0]
     name = name.lower().replace("_", "-")
     return name
+
+
+def try_git_init(repo_dir = "."):
+    """Try to init a git repository in repo_dir"""
+    try:
+        subprocess.run(["git", "init", repo_dir])
+        os.environ["HAS_GIT"] = "1"
+    except OSError:
+        Warn("Git not found, skip git init.")
+    except subprocess.CalledProcessError as e:
+        Error("Git init failed: ", e.output.decode("utf-8"))
 
 
 class DependencyManager:
@@ -415,3 +427,4 @@ class ExtEnvBuilder(venv.EnvBuilder):
                 pip.install(*self.packages)
 
         display_activate_cmd(context.env_dir)
+        try_git_init(os.path.dirname(os.path.abspath(context.env_dir)))
