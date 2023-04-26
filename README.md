@@ -200,7 +200,7 @@ FLAGS
 
 ### v0.4.1
 
-- fix: error display package name cause by str.rstrip remove the 'm' character
+- fix: error display package name caused by str.rstrip remove the 'm' character
 
 ### v0.4
 

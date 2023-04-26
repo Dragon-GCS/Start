@@ -400,7 +400,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
     """
     def __init__(
         self,
-        packages: List[str] = [],
+        packages: List[str] | None = None,
         require: str = "",
         force: bool = False,
         without_pip: bool = False,
@@ -410,9 +410,9 @@ class ExtEnvBuilder(venv.EnvBuilder):
         super().__init__(clear=force,
                          system_site_packages=not without_system_packages,
                          with_pip=not without_pip)
+        self.packages = packages or []
         if require:
-            packages.extend(DependencyManager.load_dependencies(require))
-        self.packages = packages
+            self.packages.extend(DependencyManager.load_dependencies(require))
         self.upgrade_packages = not without_upgrade
 
     def post_setup(self, context: SimpleNamespace):

@@ -1,20 +1,23 @@
-import colorama
-
 from typing import Union
+
+import colorama
 
 RESET = colorama.Style.RESET_ALL
 
 
 class Color:
+    """An wrapper class for colorama that allows for easy colorization of text. """
 
     color: str
 
-    def __init__(self, msg: str, display: bool = True):
-        self.msg = msg.removesuffix(RESET).replace(RESET, RESET + self.color)
+    def __init__(self, msg: Union[str, "Color"], display: bool = True):
+        # remove the reset code from the end of the message
+        # add color code after each reset code in the message
+        self.msg = str(msg).removesuffix(RESET).replace(RESET, RESET + self.color)
         if display:
             print(self)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"{self.color}{self.msg}{RESET}"
 
     def __add__(self, other: Union[str, "Color"]) -> str:
