@@ -77,7 +77,7 @@ class Template:
         self.create_folder(tests_folder)
         self.write_file(os.path.join(tests_folder, "__init__.py"), "")
         self.write_file(
-            os.path.join(tests_folder, "test_{}.py".format(project_name)),
+            os.path.join(tests_folder, f"test_{project_name}.py"),
             TEST_PY.format(Camel="".join(
                 w.capitalize() for w in project_name.split("_"))))
         self.write_file("setup.py", SETUP_PY)
@@ -104,6 +104,7 @@ class Template:
             for config_path in START_CONFIG_PATH:
                 if os.path.exists(os.path.join(config_path, "template")):
                     self.create_by_template()
+                    break
             else:
                 self.create_default()
 

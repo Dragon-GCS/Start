@@ -1,9 +1,9 @@
-import fire
-
 from os import path, sep
 from typing import Literal
 
-from start.logger import Detail, Info, Error, Success, Warn
+import fire
+
+from start.logger import Detail, Error, Info, Success, Warn
 from start.manager import DependencyManager, ExtEnvBuilder, PipManager
 from start.template import Template
 
@@ -145,7 +145,7 @@ class Start:
                 dev: bool = False,
                 dependency: str = "pyproject.toml"):
         if not dependency.endswith(".toml"):
-            Warning("Only support toml file now")
+            Warn("Only support toml file now")
             return
         pip = PipManager(DependencyManager.find_executable())
         operate = pip.install if method == "add" else pip.uninstall
