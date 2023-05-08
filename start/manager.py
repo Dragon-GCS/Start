@@ -11,9 +11,8 @@ import rtoml
 
 from start.logger import Detail, Info, Success, Prompt, Error, Warn
 
-
 # Default virtual environment directory names for searching.
-DEFAULT_ENV = [".venv", ".env"]
+DEFAULT_ENV = [".venv", ".env", "venv"]
 # subprocess use gbk in PIPE decoding and can't to change, due to
 # UnicodeDecodeError when some package's meta data contains invalid characters.
 # Refer: https://github.com/python/cpython/issues/50385
@@ -29,32 +28,31 @@ def display_activate_cmd(env_dir: str):
     """Display the activate command for the virtual environment.
 
     Args:
-        env_dir: Path to the virtual environment directory
+        env_dir (str): Path to the virtual environment directory
+    Returns:
+        cmd: The command to activate the virtual environment
     """
     active_scripts = {
-        "Windows": {
-            "cmd.exe": "activate.bat",
-            "Powershell": "Activate.ps1"
-        },
-        "POSIX": {
-            "bash/zsh": "activate",
-            "fish": "activate.fish",
-            "csh/tcsh": "activate.csh",
-            "Powershell": "Activate.ps1"
-        }
+        "Windows": "activate",
+        "bash": "activate",
+        "zsh": "activate",
+        "fish": "activate.fish",
+        "csh": "activate.csh",
+        "tcsh": "activate.csh",
+        "Powershell": "Activate.ps1",
     }
 
-    platform = "Windows" if sys.platform.startswith("win") else "POSIX"
-    prefix = "source " if platform == "POSIX" else ""
-    bin_path = os.path.join(env_dir,
-                            "Scripts" if platform == "Windows" else "bin")
-    scripts = active_scripts[platform]
-    Prompt("Select the following command to activate the virtual"
-           "environment according to your shell:")
-    commands = "\n".join(
-        f"{shell:10}: {prefix}{os.path.abspath(os.path.join(bin_path, script))}"
-        for shell, script in scripts.items())
-    Detail(commands)
+    if os.name == "nt":
+        bin_path = os.path.join(env_dir, "Scripts", active_scripts["Windows"])
+    elif shell := os.path.basename(os.getenv("SHELL", "")):
+        bin_path = os.path.join(env_dir, "bin", active_scripts[shell])
+    else:
+        Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
+        return ""
+
+    active_cmd = os.path.join(".", os.path.relpath(bin_path, os.getcwd()))
+    Prompt("Run this command to activate the virtual environment: " + active_cmd)
+    return active_cmd
 
 
 def neat_package_name(name: str) -> str:
@@ -77,7 +75,7 @@ def neat_package_name(name: str) -> str:
     return name
 
 
-def try_git_init(repo_dir = "."):
+def try_git_init(repo_dir: str = "."):
     """Try to init a git repository in repo_dir"""
     try:
         subprocess.run(["git", "init", repo_dir])
@@ -143,11 +141,13 @@ class DependencyManager:
         return packages
 
     @classmethod
-    def modify_dependencies(cls,
-                            method: Literal["add", "remove"],
-                            packages: Iterable[str],
-                            file: str,
-                            dev: bool = False):
+    def modify_dependencies(
+        cls,
+        method: Literal["add", "remove"],
+        packages: Iterable[str],
+        file: str,
+        dev: bool = False
+    ):
         """Change the dependencies in specified file(Only support toml file).
 
         Args:
@@ -211,15 +211,17 @@ class DependencyManager:
             The path of available interpreter
         """
         base_interpreter = os.path.basename(sys.executable)
-        bin_path = "Scripts" if sys.platform.startswith("win") else "bin"
+        bin_dir = "Scripts" if sys.platform.startswith("win") else "bin"
         if env_path := os.getenv("VIRTUAL_ENV"):
-            return os.path.join(env_path, bin_path, base_interpreter)
+            return os.path.join(env_path, bin_dir, base_interpreter)
         for path in DEFAULT_ENV:
             if env_path := cls.ensure_path(path):
-                Info(f"Found virtual environment '{env_path}' but was not "
-                     "activated, packages was installed by this interpreter")
+                Info(
+                    f"Found virtual environment '{env_path}' but was not "
+                    "activated, packages was installed by this interpreter"
+                )
                 display_activate_cmd(env_path)
-                return os.path.join(env_path, bin_path, base_interpreter)
+                return os.path.join(env_path, bin_dir, base_interpreter)
         return base_interpreter
 
 
@@ -259,13 +261,9 @@ class PipManager:
         self.execute([*cmd, *packages])
 
         installed_packages = set([
-            package for line in self.stdout
-            for package in self.parse_output(line)
+            package for line in self.stdout for package in self.parse_output(line)
         ])
-        return [
-            package for package in packages
-            if neat_package_name(package) in installed_packages
-        ]
+        return [package for package in packages if neat_package_name(package) in installed_packages]
 
     def uninstall(self, *packages: str) -> List[str]:
         """Uninstall packages.
@@ -339,9 +337,7 @@ class PipManager:
                 name = neat_package_name(name)
             if line.startswith("Requires") and name:
                 requires = line.lstrip("Requires:").strip().split(", ")
-                packages_require[name] = [
-                    neat_package_name(r) for r in requires if r
-                ]
+                packages_require[name] = [neat_package_name(r) for r in requires if r]
 
         # parse require tree
         requires_set = set(packages_require.keys())
@@ -351,17 +347,16 @@ class PipManager:
                     requires_set.remove(require)
                 requires[i] = {require: packages_require.get(require, [])}
 
-        return [{
-            name: info
-        } for name, info in packages_require.items() if name in requires_set]
+        return [{name: info} for name, info in packages_require.items() if name in requires_set]
 
     @classmethod
     def generate_dependency_tree(
-            cls,
-            name: str,
-            dependencies: List[Dict],
-            last_item: bool = False,
-            prev_prefix: str = "") -> Generator[Tuple[str, str], None, None]:
+        cls,
+        name: str,
+        dependencies: List[Dict],
+        last_item: bool = False,
+        prev_prefix: str = ""
+    ) -> Generator[Tuple[str, str], None, None]:
         """Display dependencies as a tree
 
         Args:
@@ -382,7 +377,8 @@ class PipManager:
         for i, dependency in enumerate(dependencies):
             for name, sub_dependencies in dependency.items():
                 yield from cls.generate_dependency_tree(
-                    name, sub_dependencies, i == len(dependencies) - 1, prefix)
+                    name, sub_dependencies, i == len(dependencies) - 1, prefix
+                )
 
 
 class ExtEnvBuilder(venv.EnvBuilder):
@@ -407,9 +403,9 @@ class ExtEnvBuilder(venv.EnvBuilder):
         without_upgrade: bool = False,
         without_system_packages: bool = False,
     ):
-        super().__init__(clear=force,
-                         system_site_packages=not without_system_packages,
-                         with_pip=not without_pip)
+        super().__init__(
+            clear=force, system_site_packages=not without_system_packages, with_pip=not without_pip
+        )
         self.packages = packages or []
         if require:
             self.packages.extend(DependencyManager.load_dependencies(require))
