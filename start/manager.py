@@ -77,9 +77,13 @@ def neat_package_name(name: str) -> str:
 
 def try_git_init(repo_dir: str = "."):
     """Try to init a git repository in repo_dir"""
+    if os.path.exists(os.path.join(repo_dir, ".git")):
+        Info("Git repository already exists.")
+        return
     try:
-        subprocess.run(["git", "init", repo_dir])
+        subprocess.check_output(["git", "init", repo_dir])
         os.environ["HAS_GIT"] = "1"
+        Info("Git repository initialized.")
     except OSError:
         Warn("Git not found, skip git init.")
     except subprocess.CalledProcessError as e:
@@ -233,6 +237,7 @@ class PipManager:
     """
     stdout: List[str]
     stderr: List[str]
+    return_code: int
 
     def __init__(self, executable: str):
         self.cmd = [executable, "-m", "pip"]
@@ -241,7 +246,7 @@ class PipManager:
     def execute(self, cmd: List[str]):
         """Execute the pip command."""
         cmd = self.cmd + cmd
-        self.set_outputs(subprocess.run(cmd, capture_output=True))
+        self.set_outputs(subprocess.run(cmd, capture_output=True, check=True))
         self.show_output(cmd)
         return self
 
@@ -284,7 +289,7 @@ class PipManager:
         self.stderr = self.decode(
             output.stderr).strip().replace("\r", "").split("\n") \
             if output.stderr else []
-        self.returncode = output.returncode
+        self.return_code = output.returncode
         return self
 
     def decode(self, output: bytes):
