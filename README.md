@@ -198,6 +198,11 @@ FLAGS
 
 ## Changelog
 
+### v0.4.2
+
+- fix: skip git init when repo exists
+- feat: change prompt message for activate virtual environment
+
 ### v0.4.1
 
 - fix: error display package name caused by str.rstrip remove the 'm' character

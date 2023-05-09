@@ -136,7 +136,7 @@ class DependencyManager:
             with open(config_path, encoding="utf8") as f:
                 packages = [line.strip() for line in f if line.strip()[0] not in "#-/!"]
         else:
-            Error("Not found dependencies due to unsupported file format")
+            Error("Not found dependencies due to unsupported file format: " + config_path)
             packages = []
 
         if neat:
@@ -157,7 +157,7 @@ class DependencyManager:
         Args:
             method: "add" or "remove"
             packages: Packages to add or remove
-            file: File name
+            file: Config file name
             dev: Add packages as development dependency
         """
         if not (file_path := cls.ensure_path(file)):

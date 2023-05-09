@@ -1,19 +1,27 @@
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools"]
+build-backend = 'setuptools.build_meta'
+requires = ['setuptools']
 
 [project]
-name = "start"
-version = "0.4.1"
-dependencies = ["colorama", "fire", "rtoml"]
+name = 'start'
+version = '0.4.2'
+dependencies = [
+    'colorama',
+    'fire',
+    'rtoml',
+]
 
 [[project.authors]]
-name = "Dragon-GCS"
-email = "87817321@qq.com"
+name = 'Dragon-GCS'
+email = '87817321@qq.com'
 
 [project.scripts]
-start = "start:main"
+start = 'start:main'
+
 [project.optional-dependencies]
-dev = ["pylint", "yapf"]
+dev = [
+    'pylint',
+    'yapf',
+]
 [tool.setuptools]
-packages = ["start"]
+packages = ['start']
