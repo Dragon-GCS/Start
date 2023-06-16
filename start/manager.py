@@ -1,15 +1,14 @@
 import os
 import re
-import subprocess
 import sys
 import venv
-
-from typing import Dict, Generator, Iterable, List, Literal, Optional, Tuple
+from subprocess import CalledProcessError, CompletedProcess, check_call, run
 from types import SimpleNamespace
+from typing import Dict, Generator, Iterable, List, Literal, Optional, Tuple
 
 import rtoml
 
-from start.logger import Detail, Info, Success, Prompt, Error, Warn
+from start.logger import Detail, Error, Info, Prompt, Success, Warn
 
 # Default virtual environment directory names for searching.
 DEFAULT_ENV = [".venv", ".env", "venv"]
@@ -81,12 +80,12 @@ def try_git_init(repo_dir: str = "."):
         Info("Git repository already exists.")
         return
     try:
-        subprocess.check_output(["git", "init", repo_dir])
+        check_call(["git", "init", repo_dir])
         os.environ["HAS_GIT"] = "1"
         Info("Git repository initialized.")
     except OSError:
         Warn("Git not found, skip git init.")
-    except subprocess.CalledProcessError as e:
+    except CalledProcessError as e:
         Error("Git init failed: ", e.output.decode("utf-8"))
 
 
@@ -246,7 +245,10 @@ class PipManager:
     def execute(self, cmd: List[str]):
         """Execute the pip command."""
         cmd = self.cmd + cmd
-        self.set_outputs(subprocess.run(cmd, capture_output=True, check=True))
+        try:
+            self.set_outputs(run(cmd, capture_output=True, check=True))
+        except CalledProcessError as output:
+            self.set_outputs(output)
         self.show_output(cmd)
         return self
 
@@ -281,7 +283,7 @@ class PipManager:
         self.execute(["uninstall", "-y", *packages])
         return [*packages]
 
-    def set_outputs(self, output: subprocess.CompletedProcess):
+    def set_outputs(self, output: CompletedProcess | CalledProcessError):
         """Set the outputs that to be parse."""
         self.stdout = self.decode(
             output.stdout).strip().replace("\r", "").split("\n") \
@@ -308,7 +310,7 @@ class PipManager:
             if line.startswith("Successfully"):
                 Success(line)
         if self.stderr:
-            Error(f"Unexpected result of command: {' '.join(cmd)}")
+            Error(f"Command: {' '.join(cmd)}")
             Detail("\n".join(self.stderr))
 
     def parse_output(self, output: str) -> List[str]:

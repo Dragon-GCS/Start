@@ -198,6 +198,10 @@ FLAGS
 
 ## Changelog
 
+### v0.4.3
+
+- fix: catch error when install/uninstall package with pip
+
 ### v0.4.2
 
 - fix: skip git init when repo exists

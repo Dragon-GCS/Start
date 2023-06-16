@@ -150,10 +150,10 @@ class Start:
         pip = PipManager(DependencyManager.find_executable())
         operate = pip.install if method == "add" else pip.uninstall
         result = operate(*packages)
-        DependencyManager.modify_dependencies(method=method,
-                                              packages=result,
-                                              file=dependency,
-                                              dev=dev)
+        if result:
+            DependencyManager.modify_dependencies(
+                method=method, packages=result, file=dependency, dev=dev
+            )
 
     def add(self,
             *packages,
