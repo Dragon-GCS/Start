@@ -46,7 +46,9 @@ def display_activate_cmd(env_dir: str):
     elif shell := os.path.basename(os.getenv("SHELL", "")):
         bin_path = os.path.join(env_dir, "bin", active_scripts[shell])
     else:
-        Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
+        Warn(
+            "Unknown shell, decide for yourself how to activate the virtual environment."
+        )
         return ""
 
     active_cmd = os.path.join(".", os.path.relpath(bin_path, os.getcwd()))
@@ -91,6 +93,7 @@ def try_git_init(repo_dir: str = "."):
 
 class DependencyManager:
     """Package manage related functions"""
+
     @classmethod
     def ensure_config(cls, config: dict):
         """Ensure the config contains tool.start.dependencies and
@@ -100,7 +103,10 @@ class DependencyManager:
             config: Config dict, parse from toml file
         """
         if not config.get("project"):
-            config["project"] = {"dependencies": [], "optional-dependencies": {"dev": []}}
+            config["project"] = {
+                "dependencies": [],
+                "optional-dependencies": {"dev": []},
+            }
         if not config["project"].get("dependencies"):
             config["project"]["dependencies"] = {}
         if not config["project"].get("optional-dependencies"):
@@ -113,10 +119,9 @@ class DependencyManager:
             config["project"]["optional-dependencies"]["dev"] = []
 
     @classmethod
-    def load_dependencies(cls,
-                          config_path: str,
-                          dev: bool = False,
-                          neat: bool = False) -> List[str]:
+    def load_dependencies(
+        cls, config_path: str, dev: bool = False, neat: bool = False
+    ) -> List[str]:
         """Try to load dependency list from the config path.
 
         Args:
@@ -135,7 +140,9 @@ class DependencyManager:
             with open(config_path, encoding="utf8") as f:
                 packages = [line.strip() for line in f if line.strip()[0] not in "#-/!"]
         else:
-            Error("Not found dependencies due to unsupported file format: " + config_path)
+            Error(
+                "Not found dependencies due to unsupported file format: " + config_path
+            )
             packages = []
 
         if neat:
@@ -149,7 +156,7 @@ class DependencyManager:
         method: Literal["add", "remove"],
         packages: Iterable[str],
         file: str,
-        dev: bool = False
+        dev: bool = False,
     ):
         """Change the dependencies in specified file(Only support toml file).
 
@@ -167,8 +174,11 @@ class DependencyManager:
             config = rtoml.load(f)
             cls.ensure_config(config)
 
-        dependencies: list = config["project"]["dependencies"] if not dev \
+        dependencies: list = (
+            config["project"]["dependencies"]
+            if not dev
             else config["project"]["optional-dependencies"]["dev"]
+        )
 
         if method == "add":
             for package in packages:
@@ -234,6 +244,7 @@ class PipManager:
     Args:
         executable: The python executable path
     """
+
     stdout: List[str]
     stderr: List[str]
     return_code: int
@@ -267,10 +278,14 @@ class PipManager:
         Info("Start install packages: " + ", ".join(packages))
         self.execute([*cmd, *packages])
 
-        installed_packages = set([
-            package for line in self.stdout for package in self.parse_output(line)
-        ])
-        return [package for package in packages if neat_package_name(package) in installed_packages]
+        installed_packages = set(
+            [package for line in self.stdout for package in self.parse_output(line)]
+        )
+        return [
+            package
+            for package in packages
+            if neat_package_name(package) in installed_packages
+        ]
 
     def uninstall(self, *packages: str) -> List[str]:
         """Uninstall packages.
@@ -285,12 +300,16 @@ class PipManager:
 
     def set_outputs(self, output: CompletedProcess | CalledProcessError):
         """Set the outputs that to be parse."""
-        self.stdout = self.decode(
-            output.stdout).strip().replace("\r", "").split("\n") \
-            if output.stdout else []
-        self.stderr = self.decode(
-            output.stderr).strip().replace("\r", "").split("\n") \
-            if output.stderr else []
+        self.stdout = (
+            self.decode(output.stdout).strip().replace("\r", "").split("\n")
+            if output.stdout
+            else []
+        )
+        self.stderr = (
+            self.decode(output.stderr).strip().replace("\r", "").split("\n")
+            if output.stderr
+            else []
+        )
         self.return_code = output.returncode
         return self
 
@@ -354,7 +373,11 @@ class PipManager:
                     requires_set.remove(require)
                 requires[i] = {require: packages_require.get(require, [])}
 
-        return [{name: info} for name, info in packages_require.items() if name in requires_set]
+        return [
+            {name: info}
+            for name, info in packages_require.items()
+            if name in requires_set
+        ]
 
     @classmethod
     def generate_dependency_tree(
@@ -362,7 +385,7 @@ class PipManager:
         name: str,
         dependencies: List[Dict],
         last_item: bool = False,
-        prev_prefix: str = ""
+        prev_prefix: str = "",
     ) -> Generator[Tuple[str, str], None, None]:
         """Display dependencies as a tree
 
@@ -401,6 +424,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
         without_system_packages: Dont give the virtual environment access
             to system packages
     """
+
     def __init__(
         self,
         packages: List[str] | None = None,
@@ -411,7 +435,9 @@ class ExtEnvBuilder(venv.EnvBuilder):
         without_system_packages: bool = False,
     ):
         super().__init__(
-            clear=force, system_site_packages=not without_system_packages, with_pip=not without_pip
+            clear=force,
+            system_site_packages=not without_system_packages,
+            with_pip=not without_pip,
         )
         self.packages = packages or []
         if require:

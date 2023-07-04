@@ -20,8 +20,9 @@ start = 'start:main'
 
 [project.optional-dependencies]
 dev = [
-    'pylint',
-    'yapf',
+    'flake8',
+    'black',
+    'isort'
 ]
 [tool.setuptools]
 packages = ['start']

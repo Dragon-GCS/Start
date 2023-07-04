@@ -6,7 +6,7 @@ RESET = colorama.Style.RESET_ALL
 
 
 class Color:
-    """An wrapper class for colorama that allows for easy colorization of text. """
+    """An wrapper class for colorama that allows for easy colorization of text."""
 
     color: str
 

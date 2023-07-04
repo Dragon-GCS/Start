@@ -2,7 +2,6 @@ import os
 
 from start.logger import Warn
 
-
 SETUP_PY = """
 from setuptools import setup\n
 if __name__ == '__main__':
@@ -78,8 +77,10 @@ class Template:
         self.write_file(os.path.join(tests_folder, "__init__.py"), "")
         self.write_file(
             os.path.join(tests_folder, f"test_{project_name}.py"),
-            TEST_PY.format(Camel="".join(
-                w.capitalize() for w in project_name.split("_"))))
+            TEST_PY.format(
+                Camel="".join(w.capitalize() for w in project_name.split("_"))
+            ),
+        )
         self.write_file("setup.py", SETUP_PY)
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
@@ -108,6 +109,5 @@ class Template:
             else:
                 self.create_default()
 
-        self.write_file("pyproject.toml",
-                        PYPROJECT_TOML.format(name=self.project_name))
+        self.write_file("pyproject.toml", PYPROJECT_TOML.format(name=self.project_name))
         os.chdir(current_dir)
