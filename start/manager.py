@@ -46,9 +46,7 @@ def display_activate_cmd(env_dir: str):
     elif shell := os.path.basename(os.getenv("SHELL", "")):
         bin_path = os.path.join(env_dir, "bin", active_scripts[shell])
     else:
-        Warn(
-            "Unknown shell, decide for yourself how to activate the virtual environment."
-        )
+        Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
         return ""
 
     active_cmd = os.path.join(".", os.path.relpath(bin_path, os.getcwd()))
@@ -138,11 +136,11 @@ class DependencyManager:
                     packages = config["project"]["optional-dependencies"]["dev"]
         elif config_path.endswith(".txt"):
             with open(config_path, encoding="utf8") as f:
-                packages = [line.strip() for line in f if line.strip()[0] not in "#-/!"]
+                packages = [
+                    line for _line in f if (line := _line.strip()) and line[0] not in "#-/!"
+                ]
         else:
-            Error(
-                "Not found dependencies due to unsupported file format: " + config_path
-            )
+            Error("Not found dependencies due to unsupported file format: " + config_path)
             packages = []
 
         if neat:
@@ -281,11 +279,7 @@ class PipManager:
         installed_packages = set(
             [package for line in self.stdout for package in self.parse_output(line)]
         )
-        return [
-            package
-            for package in packages
-            if neat_package_name(package) in installed_packages
-        ]
+        return [package for package in packages if neat_package_name(package) in installed_packages]
 
     def uninstall(self, *packages: str) -> List[str]:
         """Uninstall packages.
@@ -373,11 +367,7 @@ class PipManager:
                     requires_set.remove(require)
                 requires[i] = {require: packages_require.get(require, [])}
 
-        return [
-            {name: info}
-            for name, info in packages_require.items()
-            if name in requires_set
-        ]
+        return [{name: info} for name, info in packages_require.items() if name in requires_set]
 
     @classmethod
     def generate_dependency_tree(
