@@ -198,6 +198,10 @@ FLAGS
 
 ## Changelog
 
+### v0.4.4
+
+- fix: skip empty line in txt dependency file
+
 ### v0.4.3
 
 - fix: catch error when install/uninstall package with pip
