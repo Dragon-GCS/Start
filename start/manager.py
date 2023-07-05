@@ -113,7 +113,7 @@ class DependencyManager:
             Error("project.dependencies is not a list, start fix it.")
             config["project"]["dependencies"] = []
         if not isinstance(config["project"]["optional-dependencies"]["dev"], list):
-            Error("tool.start.dev-dependencies is not a list, start fix it.")
+            Error("project.optional-dependencies.dev is not a list, start fix it.")
             config["project"]["optional-dependencies"]["dev"] = []
 
     @classmethod

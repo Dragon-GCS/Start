@@ -18,10 +18,10 @@ dependencies = []
 [[project.authors]]
 name = ""
 email = "example@example.com"\n
+[project.optional-dependencies]
+dev = []\n
 [tool.setuptools]
 packages = ["{name}"]\n
-[tool.start]
-dev-dependencies = []
 """.lstrip()
 MAIN_PY = """
 import {}\n
