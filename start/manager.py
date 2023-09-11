@@ -270,6 +270,8 @@ class PipManager:
         Returns:
             packages: Success installed packages
         """
+        if not packages:
+            return []
         cmd = ["install"]
         if upgrade:
             cmd.append("-U")

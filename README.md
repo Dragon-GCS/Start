@@ -198,6 +198,11 @@ FLAGS
 
 ## Changelog
 
+### v0.4.5
+
+- fix: do nothing where no package to install
+- feat: all create .gitignore where detect git
+
 ### v0.4.4
 
 - fix: skip empty line in txt dependency file

@@ -84,8 +84,6 @@ class Template:
         self.write_file("setup.py", SETUP_PY)
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
-        if os.environ.pop("HAS_GIT", None):
-            self.write_file(".gitignore", self.vname + "\n")
 
     def create(self, with_template: bool = False):
         """Create project template at specified path.
@@ -108,6 +106,9 @@ class Template:
                     break
             else:
                 self.create_default()
+
+        if os.getenv("HAS_GIT"):
+            self.write_file(".gitignore", "\n".join((self.vname, "**/__pycache__")))
 
         self.write_file("pyproject.toml", PYPROJECT_TOML.format(name=self.project_name))
         os.chdir(current_dir)
