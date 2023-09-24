@@ -105,16 +105,18 @@ class DependencyManager:
                 "dependencies": [],
                 "optional-dependencies": {"dev": []},
             }
-        if not config["project"].get("dependencies"):
-            config["project"]["dependencies"] = {}
-        if not config["project"].get("optional-dependencies"):
+        if "dependencies" not in config["project"]:
+            config["project"]["dependencies"] = []
+        if "optional-dependencies" not in config["project"]:
             config["project"]["optional-dependencies"] = {"dev": []}
         if not isinstance(config["project"]["dependencies"], list):
             Error("project.dependencies is not a list, start fix it.")
+            config["project"]["dependencies_bak"] = config["project"]["dependencies"]
             config["project"]["dependencies"] = []
         if not isinstance(config["project"]["optional-dependencies"]["dev"], list):
             Error("project.optional-dependencies.dev is not a list, start fix it.")
-            config["project"]["optional-dependencies"]["dev"] = []
+            opt_deps = config["project"]["optional-dependencies"]
+            opt_deps["dev_bak"], opt_deps["dev"] = opt_deps["dev"], []
 
     @classmethod
     def load_dependencies(

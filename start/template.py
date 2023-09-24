@@ -13,7 +13,7 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools"]\n
 [project]
 name = "{name}"
-version = "0.0.1"\n
+version = "0.0.1"
 dependencies = []
 [[project.authors]]
 name = ""
@@ -77,9 +77,7 @@ class Template:
         self.write_file(os.path.join(tests_folder, "__init__.py"), "")
         self.write_file(
             os.path.join(tests_folder, f"test_{project_name}.py"),
-            TEST_PY.format(
-                Camel="".join(w.capitalize() for w in project_name.split("_"))
-            ),
+            TEST_PY.format(Camel="".join(w.capitalize() for w in project_name.split("_"))),
         )
         self.write_file("setup.py", SETUP_PY)
         self.write_file("main.py", MAIN_PY.format(project_name))

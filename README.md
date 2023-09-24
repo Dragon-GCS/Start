@@ -198,6 +198,11 @@ FLAGS
 
 ## Changelog
 
+### v0.4.6
+
+- feat: save prev dependencies when fix config file
+- fix: error init when config.project.dependencies is an empty list
+
 ### v0.4.5
 
 - fix: do nothing where no package to install
