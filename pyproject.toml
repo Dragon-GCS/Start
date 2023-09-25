@@ -5,6 +5,22 @@ requires = ['setuptools']
 [project]
 name = 'start-manager'
 version = '0.4.6'
+description = 'A python package manager based on pip and venv'
+readme = 'README.md'
+requires-python = '>=3.6'
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: GNU General Public License (GPL)',
+    'Programming Language :: Python :: 3',
+    'Topic :: Software Development :: Build Tools',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Software Development :: Version Control :: Git',
+    'Topic :: System :: Archiving :: Packaging',
+    'Topic :: System :: Software Distribution',
+    'Topic :: Utilities',
+]
 dependencies = [
     'colorama',
     'fire',
@@ -14,6 +30,9 @@ dependencies = [
 [[project.authors]]
 name = 'Dragon-GCS'
 email = '87817321@qq.com'
+
+[project.urls]
+HOMEPAGE = 'https://github.com/Dragon-GCS/start'
 
 [project.scripts]
 start = 'start:main'
