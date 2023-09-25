@@ -3,8 +3,8 @@ build-backend = 'setuptools.build_meta'
 requires = ['setuptools']
 
 [project]
-name = 'start'
-version = '0.4.5'
+name = 'start-manager'
+version = '0.4.6'
 dependencies = [
     'colorama',
     'fire',
