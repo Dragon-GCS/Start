@@ -4,6 +4,12 @@ A python package manager based on pip and venv, use `pyproject.toml` instead of 
 
 ## install
 
+Install from pypi
+
+```shell
+>>> pip install start-manager
+```
+
 Install from github
 
 ```shell
