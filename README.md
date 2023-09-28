@@ -204,6 +204,10 @@ FLAGS
 
 ## Changelog
 
+### v0.4.7
+
+- fix: correct the activate command
+
 ### v0.4.6
 
 - feat: save prev dependencies when fix config file

@@ -50,6 +50,8 @@ def display_activate_cmd(env_dir: str):
         return ""
 
     active_cmd = os.path.join(".", os.path.relpath(bin_path, os.getcwd()))
+    if not os.access(bin_path, os.X_OK):
+        active_cmd = "source " + active_cmd
     Prompt("Run this command to activate the virtual environment: " + active_cmd)
     return active_cmd
 

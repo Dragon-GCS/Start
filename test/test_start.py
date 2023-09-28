@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import unittest
 from test.utils import capture_output
@@ -11,14 +12,22 @@ from start.manager import display_activate_cmd, try_git_init
 class TestStart(unittest.TestCase):
     def setUp(self) -> None:
         self.env_dir = ".venv"
+        self.need_clean = False
         if not os.path.isdir(".venv"):
             Start().init(vname=self.env_dir)
+            self.need_clean = True
+
+    def tearDown(self) -> None:
+        if self.need_clean:
+            shutil.rmtree(self.env_dir)
 
     def test_activate_cmd(self):
         if os.name == "nt":
             self.assertEqual(display_activate_cmd(self.env_dir), ".\\.venv\\Scripts\\activate")
             os.name = "unix"    # mock unix
         base_path = os.path.join(".", ".venv", "bin", "activate")
+        if os.access(base_path, os.R_OK):
+            base_path = "source " + base_path
         os.environ["SHELL"] = "/bin/bash"
         self.assertEqual(display_activate_cmd(self.env_dir), base_path)
         os.environ["SHELL"] = "/bin/zsh"
