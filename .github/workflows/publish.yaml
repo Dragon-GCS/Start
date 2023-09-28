@@ -14,7 +14,7 @@ on:
       - v*
 
 jobs:
-  Publish To PyPI:
+  Publish-To-PyPI:
     runs-on: ubuntu-latest
     if: contains(github.server_url, 'github.com')
     steps:
