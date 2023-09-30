@@ -115,7 +115,7 @@ class DependencyManager:
             Error("project.dependencies is not a list, start fix it.")
             config["project"]["dependencies_bak"] = config["project"]["dependencies"]
             config["project"]["dependencies"] = []
-        if not isinstance(config["project"]["optional-dependencies"]["dev"], list):
+        if not isinstance(config["project"]["optional-dependencies"].get("dev"), list):
             Error("project.optional-dependencies.dev is not a list, start fix it.")
             opt_deps = config["project"]["optional-dependencies"]
             opt_deps["dev_bak"], opt_deps["dev"] = opt_deps["dev"], []
