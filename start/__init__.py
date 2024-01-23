@@ -13,16 +13,19 @@ class Start:
 
     Commands: new, init, install, add, remove, show, list, install
     """
-    def new(self,
-            project_name,
-            *packages,
-            require: str = "",
-            vname: str = ".venv",
-            force: bool = False,
-            without_pip: bool = False,
-            without_upgrade: bool = False,
-            with_template: bool = False,
-            without_system_packages: bool = False):
+
+    def new(
+        self,
+        project_name,
+        *packages,
+        require: str = "",
+        vname: str = ".venv",
+        force: bool = False,
+        without_pip: bool = False,
+        without_upgrade: bool = False,
+        with_template: bool = False,
+        without_system_packages: bool = False,
+    ):
         """Create a new project. Create a virtual environment and install
         specified packages.
 
@@ -50,12 +53,13 @@ class Start:
             packages:
                 Packages to install after create the virtual environment
         """
-        Info(f"Start {'creating' if project_name != '.' else 'initializing'} "
-             f"project: {project_name}")
+        Info(
+            f"Start {'creating' if project_name != '.' else 'initializing'} "
+            f"project: {project_name}"
+        )
         env_path = path.join(project_name, vname)
         if path.exists(env_path) and not force:
-            Error(f"Virtual environment {env_path} already exists,"
-                  "use --force to override")
+            Error(f"Virtual environment {env_path} already exists," "use --force to override")
             return
         packages = list(packages)
         ExtEnvBuilder(
@@ -64,24 +68,28 @@ class Start:
             force=force,
             without_pip=without_pip,
             without_upgrade=without_upgrade,
-            without_system_packages=without_system_packages).create(env_path)
+            without_system_packages=without_system_packages,
+        ).create(env_path)
         Success("Finish creating virtual environment.")
         # Create project directory from template
         Template(project_name=project_name, vname=vname).create(with_template)
         # modify dependencies in pyproject.toml
         DependencyManager.modify_dependencies(
-            "add", packages, path.join(project_name, "pyproject.toml"))
+            "add", packages, path.join(project_name, "pyproject.toml")
+        )
         Success("Finish creating project.")
 
-    def init(self,
-             *packages,
-             require: str = "",
-             vname: str = ".venv",
-             force: bool = False,
-             without_pip: bool = False,
-             without_upgrade: bool = False,
-             with_template: bool = False,
-             without_system_packages: bool = False):
+    def init(
+        self,
+        *packages,
+        require: str = "",
+        vname: str = ".venv",
+        force: bool = False,
+        without_pip: bool = False,
+        without_upgrade: bool = False,
+        with_template: bool = False,
+        without_system_packages: bool = False,
+    ):
         """Use current directory as the project name and create a new project
         at the current directory.
 
@@ -107,15 +115,17 @@ class Start:
             packages:
                 Packages to install after create the virtual environment
         """
-        self.new(".",
-                 *packages,
-                 require=require,
-                 vname=vname,
-                 force=force,
-                 without_pip=without_pip,
-                 without_upgrade=without_upgrade,
-                 with_template=with_template,
-                 without_system_packages=without_system_packages)
+        self.new(
+            ".",
+            *packages,
+            require=require,
+            vname=vname,
+            force=force,
+            without_pip=without_pip,
+            without_upgrade=without_upgrade,
+            with_template=with_template,
+            without_system_packages=without_system_packages,
+        )
 
     def install(self, dependency: str = ""):
         """Install packages in specified dependency file.
@@ -131,19 +141,23 @@ class Start:
         """
         if dependency:
             packages = DependencyManager.load_dependencies(dependency)
-        elif file := (DependencyManager.ensure_path("pyproject.toml") or
-                      DependencyManager.ensure_path("requirements.txt")):
+        elif file := (
+            DependencyManager.ensure_path("pyproject.toml")
+            or DependencyManager.ensure_path("requirements.txt")
+        ):
             packages = DependencyManager.load_dependencies(file)
         else:
             Error("No dependency file found")
             return
         PipManager(DependencyManager.find_executable()).install(*packages)
 
-    def _modify(self,
-                *packages,
-                method: Literal['add', 'remove'],
-                dev: bool = False,
-                dependency: str = "pyproject.toml"):
+    def _modify(
+        self,
+        *packages,
+        method: Literal["add", "remove"],
+        dev: bool = False,
+        dependency: str = "pyproject.toml",
+    ):
         if not dependency.endswith(".toml"):
             Warn("Only support toml file now")
             return
@@ -155,10 +169,7 @@ class Start:
                 method=method, packages=result, file=dependency, dev=dev
             )
 
-    def add(self,
-            *packages,
-            dev: bool = False,
-            dependency: str = "pyproject.toml"):
+    def add(self, *packages, dev: bool = False, dependency: str = "pyproject.toml"):
         """Install packages and add to the dependency file.
 
         Args:
@@ -172,10 +183,7 @@ class Start:
         """
         self._modify(*packages, method="add", dev=dev, dependency=dependency)
 
-    def remove(self,
-               *packages,
-               dev: bool = False,
-               dependency: str = "pyproject.toml"):
+    def remove(self, *packages, dev: bool = False, dependency: str = "pyproject.toml"):
         """Uninstall packages and remove from the dependency file.
 
         Args:
@@ -205,12 +213,13 @@ class Start:
             Error("\n".join(pip.stderr))
 
     def list(
-            self,
-            *,  # avoid display default value
-            tree: bool = False,
-            dep: bool = False,
-            dev: bool = False,
-            dependency: str = "pyproject.toml"):
+        self,
+        *,  # avoid display default value
+        tree: bool = False,
+        dep: bool = False,
+        dev: bool = False,
+        dependency: str = "pyproject.toml",
+    ):
         """Display all installed packages.
 
         Args:
@@ -232,9 +241,7 @@ class Start:
                 Error(f"Dependency file {dependency} not found")
                 return
             status = "(Dependencies)" if dep else "(Dev-Dependencies)"
-            packages = DependencyManager.load_dependencies(config_path,
-                                                           dev=dev,
-                                                           neat=tree)
+            packages = DependencyManager.load_dependencies(config_path, dev=dev, neat=tree)
         else:
             packages = pip.execute(["list"]).parse_list_output()
 
@@ -251,14 +258,14 @@ class Start:
         Success("Analysis for installed packages:")
 
         Info(pip.execu.split(sep)[-4] + status
-             if sep in pip.execu else pip.execu)    # yapf: disable
+             if sep in pip.execu else pip.execu)  # yapf: disable
 
         installed_packages = set(packages)
         for i, package in enumerate(analyzed_packages):
             name, dependencies = list(package.items())[0]
-            for branch, tree_string in \
-                pip.generate_dependency_tree(
-                    name, dependencies, i == len(analyzed_packages) - 1):
+            for branch, tree_string in pip.generate_dependency_tree(
+                name, dependencies, i == len(analyzed_packages) - 1
+            ):
                 Status = Detail if branch in installed_packages else Warn
                 Detail(tree_string + Status(branch, display=False))
 

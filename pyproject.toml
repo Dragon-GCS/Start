@@ -38,10 +38,9 @@ HOMEPAGE = 'https://github.com/Dragon-GCS/start'
 start = 'start:main'
 
 [project.optional-dependencies]
-dev = [
-    'flake8',
-    'black',
-    'isort',
-]
+dev = ['ruff']
+[tool.ruff]
+line-length = 100
+
 [tool.setuptools]
 packages = ['start']
