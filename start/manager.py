@@ -259,10 +259,9 @@ class PipManager:
         """Execute the pip command."""
         cmd = self.cmd + cmd
         try:
-            self.set_outputs(run(cmd, capture_output=True, check=True))
+            self.set_outputs(run(cmd, text=True, capture_output=True, check=True))
         except CalledProcessError as output:
             self.set_outputs(output)
-        self.show_output(cmd)
         return self
 
     def install(self, *packages: str, upgrade: bool = False) -> List[str]:
@@ -280,7 +279,7 @@ class PipManager:
         if upgrade:
             cmd.append("-U")
         Info("Start install packages: " + ", ".join(packages))
-        self.execute([*cmd, *packages])
+        self.execute([*cmd, *packages]).show_output()
 
         installed_packages = set(
             [package for line in self.stdout for package in self.parse_output(line)]
@@ -295,21 +294,13 @@ class PipManager:
         Returns:
             packages: Success uninstalled packages
         """
-        self.execute(["uninstall", "-y", *packages])
+        self.execute(["uninstall", "-y", *packages]).show_output()
         return [*packages]
 
     def set_outputs(self, output: CompletedProcess | CalledProcessError):
         """Set the outputs that to be parse."""
-        self.stdout = (
-            self.decode(output.stdout).strip().replace("\r", "").split("\n")
-            if output.stdout
-            else []
-        )
-        self.stderr = (
-            self.decode(output.stderr).strip().replace("\r", "").split("\n")
-            if output.stderr
-            else []
-        )
+        self.stdout = output.stdout.strip().split("\n") if output.stdout else []
+        self.stderr = output.stderr.strip().split("\n") if output.stderr else []
         self.return_code = output.returncode
         return self
 
@@ -320,7 +311,7 @@ class PipManager:
         except UnicodeDecodeError:
             return output.decode("gbk")
 
-    def show_output(self, cmd: List[str]):
+    def show_output(self):
         """Display the pip command output"""
         for line in self.stdout:
             line = line.strip()
@@ -329,8 +320,7 @@ class PipManager:
             if line.startswith("Successfully"):
                 Success(line)
         if self.stderr:
-            Error(f"Command: {' '.join(cmd)}")
-            Detail("\n".join(self.stderr))
+            Error("\n".join(self.stderr))
 
     def parse_output(self, output: str) -> List[str]:
         """Parse the output of pip to extract the package name."""
