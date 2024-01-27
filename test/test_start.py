@@ -22,11 +22,15 @@ class TestStart(unittest.TestCase):
             shutil.rmtree(self.env_dir)
 
     def test_activate_cmd(self):
+        cwd = os.getcwd()
         if os.name == "nt":
-            self.assertEqual(display_activate_cmd(self.env_dir), ".\\.venv\\Scripts\\activate")
-            os.name = "unix"    # mock unix
-        base_path = os.path.join(".", ".venv", "bin", "activate")
-        if os.access(base_path, os.R_OK):
+            self.assertEqual(
+                display_activate_cmd(self.env_dir),
+                os.path.join(cwd, ".venv\\Scripts\\Activate.ps1"),
+            )
+            os.name = "unix"  # mock unix
+        base_path = os.path.join(cwd, ".venv", "bin", "activate")
+        if not os.access(base_path, os.X_OK):
             base_path = "source " + base_path
         os.environ["SHELL"] = "/bin/bash"
         self.assertEqual(display_activate_cmd(self.env_dir), base_path)
@@ -65,9 +69,7 @@ class TestStart(unittest.TestCase):
 
         with capture_output() as output:
             try_git_init()
-        self.assertEqual(
-            output.getvalue().strip(), repr(Info("Git repository initialized."))
-        )
+        self.assertEqual(output.getvalue().strip(), repr(Info("Git repository initialized.")))
 
         os.rmdir(".git")
         if os.path.exists(".git.bak"):

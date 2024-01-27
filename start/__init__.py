@@ -4,15 +4,17 @@ from typing import Literal
 import fire
 
 from start.logger import Detail, Error, Info, Success, Warn
-from start.manager import DependencyManager, ExtEnvBuilder, PipManager
+from start.manager import DependencyManager, EnvManager, ExtEnvBuilder, PipManager
 from start.template import Template
 
 
 class Start:
     """Package manager based on pip and venv
 
-    Commands: new, init, install, add, remove, show, list, install
+    Commands: new, init, install, add, remove, show, list, install, env
     """
+
+    env = EnvManager()
 
     def new(
         self,

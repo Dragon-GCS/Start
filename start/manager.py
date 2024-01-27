@@ -8,7 +8,7 @@ from typing import Dict, Generator, Iterable, List, Literal, Optional, Tuple
 
 import rtoml
 
-from start.logger import Detail, Error, Info, Prompt, Success, Warn
+from start.logger import Error, Info, Prompt, Success, Warn
 
 # Default virtual environment directory names for searching.
 DEFAULT_ENV = [".venv", ".env", "venv"]
@@ -23,16 +23,16 @@ LINE = "│ "
 INDENT = "  "
 
 
-def display_activate_cmd(env_dir: str):
+def display_activate_cmd(env_dir: str, prompt: bool = True):
     """Display the activate command for the virtual environment.
 
     Args:
         env_dir (str): Path to the virtual environment directory
+        prompt (bool): Whether to prompt the command
     Returns:
         cmd: The command to activate the virtual environment
     """
     active_scripts = {
-        "Windows": "activate",
         "bash": "activate",
         "zsh": "activate",
         "fish": "activate.fish",
@@ -40,19 +40,21 @@ def display_activate_cmd(env_dir: str):
         "tcsh": "activate.csh",
         "Powershell": "Activate.ps1",
     }
-
-    if os.name == "nt":
-        bin_path = os.path.join(env_dir, "Scripts", active_scripts["Windows"])
-    elif shell := os.path.basename(os.getenv("SHELL", "")):
+    if shell := os.path.basename(os.getenv("SHELL", "")):
         bin_path = os.path.join(env_dir, "bin", active_scripts[shell])
+    elif os.name == "nt":
+        # Only support powershell on windows
+        # Cmd has a conflict with start command
+        bin_path = os.path.join(env_dir, "Scripts", active_scripts["Powershell"])
     else:
         Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
         return ""
 
-    active_cmd = os.path.join(".", os.path.relpath(bin_path, os.getcwd()))
+    active_cmd = os.path.abspath(bin_path)
     if not os.access(bin_path, os.X_OK):
         active_cmd = "source " + active_cmd
-    Prompt("Run this command to activate the virtual environment: " + active_cmd)
+    if prompt:
+        Prompt("Run this command to activate the virtual environment: " + active_cmd)
     return active_cmd
 
 
@@ -409,6 +411,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
             packages to install in the virtual environment
         without_system_packages: Dont give the virtual environment access
             to system packages
+        init_repo: Try to init a git repository in the parent directory
     """
 
     def __init__(
@@ -419,6 +422,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
         without_pip: bool = False,
         without_upgrade: bool = False,
         without_system_packages: bool = False,
+        init_repo: bool = True,
     ):
         super().__init__(
             clear=force,
@@ -429,6 +433,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
         if require:
             self.packages.extend(DependencyManager.load_dependencies(require))
         self.upgrade_packages = not without_upgrade
+        self.init_repo = init_repo
 
     def post_setup(self, context: SimpleNamespace):
         """Install and upgrade packages after created environment."""
@@ -442,4 +447,101 @@ class ExtEnvBuilder(venv.EnvBuilder):
                 pip.install(*self.packages)
 
         display_activate_cmd(context.env_dir)
-        try_git_init(os.path.dirname(os.path.abspath(context.env_dir)))
+        if self.init_repo:
+            try_git_init(os.path.dirname(os.path.abspath(context.env_dir)))
+
+
+class EnvManager:
+    def __init__(self) -> None:
+        # 读取数据目录，如果有START_DATA_DIR环境变量则使用，否则使用$HOME/.start
+        # 数据目录为Path对象
+        self._data_dir = os.getenv("START_DATA_DIR", os.path.expanduser("~/.start"))
+        os.makedirs(self._data_dir, exist_ok=True)
+
+    def activate(self, env_name: str):
+        """Display the activate command for the virtual environment.
+
+        To activate on different shell, use following commands:
+        - Powershell: Invoke-Expression (&start env activate <ENV_NAME>)
+        - cmd: Not support due to the conflict of start
+        - bash/zsh: eval "$(start env activate <ENV_NAME>)"
+        - fish: start env activate <ENV_NAME>| source
+        - csh/tcsh: eval `start env activate <ENV_NAME>`
+        """
+        env_path = None
+        if env_name == ".":
+            for env in DEFAULT_ENV:
+                if env_path := DependencyManager.ensure_path(env):
+                    break
+            else:
+                Error("No virtual environment found.")
+        else:
+            for path in [self._data_dir, os.getcwd()]:
+                env_path = os.path.join(path, env_name)
+                if os.path.exists(env_path):
+                    break
+            else:
+                Error(f"Virtual environment {env_name} not found.")
+        if env_path is None:
+            return
+        active_cmd = display_activate_cmd(str(env_path), prompt=False)
+        print(active_cmd)
+
+    def create(
+        self,
+        env_name: str,
+        *packages,
+        require: str = "",
+        force: bool = False,
+        without_pip: bool = False,
+        without_upgrade: bool = False,
+        without_system_packages: bool = False,
+    ):
+        """Create a new project. Create a virtual environment and install
+        specified packages.
+
+        Args:
+            env_name:
+                Name of the virtual environment
+            packages:
+                Packages to install after create the virtual environment
+            require:
+                Dependency file name. Toml file or plain text file.
+            force:
+                Remove the existing virtual environment if it exists
+            without_pip:
+                Default to install pip in the virtual environment, add
+                "--without-pip" to skip this.
+            without_upgrade:
+                Default to upgrade core package(pip & setuptools) and
+                all packages to install in the virtual environment,
+                add "--without-upgrade" to skip this.
+            with_template:
+                Add "--without_template" to create template files.
+            without_system_packages:
+                Default to give the virtual environment access to system
+                packages, add "--without-system-packages" to skip this.
+        """
+        env_path = os.path.join(self._data_dir, env_name)
+        if os.path.exists(env_path) and not force:
+            Error(f"Virtual environment {env_name} already exists," "use --force to override")
+            return
+        Info(f"Creating virtual environment: {env_name}({env_path})")
+        packages = list(packages)
+        ExtEnvBuilder(
+            packages=packages,
+            require=require,
+            force=force,
+            without_pip=without_pip,
+            without_upgrade=without_upgrade,
+            without_system_packages=without_system_packages,
+            init_repo=False,
+        ).create(env_path)
+        Success("Finish creating virtual environment.")
+
+    def list(self):
+        """List all virtual environments."""
+        for env in os.listdir(self._data_dir):
+            env_path = os.path.abspath(os.path.join(self._data_dir, env))
+            if os.path.isdir(env_path):
+                Info(f"{env}({env_path})")

@@ -1,4 +1,5 @@
-from typing import Union
+import sys
+from typing import TextIO, Union
 
 import colorama
 
@@ -9,13 +10,14 @@ class Color:
     """An wrapper class for colorama that allows for easy colorization of text."""
 
     color: str
+    out: TextIO = sys.stdout
 
     def __init__(self, msg: Union[str, "Color"], display: bool = True):
         # remove the reset code from the end of the message
         # add color code after each reset code in the message
         self.msg = str(msg).removesuffix(RESET).replace(RESET, RESET + self.color)
         if display:
-            print(self)
+            print(self, file=self.out)
 
     def __repr__(self) -> str:
         return f"{self.color}{self.msg}{RESET}"
@@ -33,6 +35,7 @@ class Success(Color):
 
 class Error(Color):
     color: str = colorama.Fore.RED
+    out = sys.stderr
 
 
 class Detail(Color):

@@ -202,7 +202,79 @@ FLAGS
         Only take effect when "dep" or "dev"  is True.
 ```
 
+### `start env activate`
+
+```shell
+SYNOPSIS
+    start env activate ENV_NAME
+
+DESCRIPTION
+    To activate on different shell, use following commands:
+    - Powershell: Invoke-Expression (&start env activate <ENV_NAME>)
+    - cmd: Not support due to the conflict of start
+    - bash/zsh: eval "$(start env activate <ENV_NAME>)"
+    - fish: start env activate <ENV_NAME>| source
+    - csh/tcsh: eval `start env activate <ENV_NAME>`
+
+POSITIONAL ARGUMENTS
+    ENV_NAME
+        Type: str
+```
+
+### `start env create`
+
+```shell
+SYNOPSIS
+    start env create ENV_NAME <flags> [PACKAGES]...
+
+DESCRIPTION
+    Create a virtual environment and record it.
+
+POSITIONAL ARGUMENTS
+    ENV_NAME
+        Type: str
+        Name of the virtual environment
+    PACKAGES
+        Packages to install after create the virtual environment
+
+FLAGS
+    -r, --require=REQUIRE
+        Type: str
+        Default: ''
+        Dependency file name. Toml file or plain text file.
+    -f, --force=FORCE
+        Type: bool
+        Default: False
+        Remove the existing virtual environment if it exists
+    --without_pip=WITHOUT_PIP
+        Type: bool
+        Default: False
+        Default to install pip in the virtual environment, add "--without-pip" to skip this.
+    --without_upgrade=WITHOUT_UPGRADE
+        Type: bool
+        Default: False
+        Default to upgrade core package(pip & setuptools) and all packages to install in the virtual environment, add "--without-upgrade" to skip this.
+    --without_system_packages=WITHOUT_SYSTEM_PACKAGES
+        Type: bool
+        Default: False
+        Default to give the virtual environment access to system packages, add "--without-system-packages" to skip this.
+```
+
+### `start env list`
+
+```shell
+SYNOPSIS
+    start env list -
+
+DESCRIPTION
+    List all virtual environments.
+```
+
 ## Changelog
+
+### v0.5.0
+
+- feat: add `start env` command to manager environments
 
 ### v0.4.7
 
