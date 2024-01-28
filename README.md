@@ -288,6 +288,10 @@ DESCRIPTION
 
 ## Changelog
 
+### v0.5.2
+
+- fix: Error when activate an relative path virtual environment
+
 ### v0.5.1
 
 - fix: Not modify the dependency file when dependencies are not changed

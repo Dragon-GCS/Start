@@ -520,34 +520,41 @@ class EnvManager:
         self._data_dir = os.getenv("START_DATA_DIR", os.path.expanduser("~/.start"))
         os.makedirs(self._data_dir, exist_ok=True)
 
+    @classmethod
+    def is_env_dir(cls, path: str):
+        """Check path is a virtual environment directory."""
+        bin_dir_name = "Scripts" if sys.platform.startswith("win") else "bin"
+        activate_script = os.path.join(path, bin_dir_name, "activate")
+        return os.path.exists(activate_script) and os.path.isfile(activate_script)
+
     def activate(self, env_name: str):
         """Display the activate command for the virtual environment.
 
+        Start will check following path to find the virtual environment:
+            - $START_DATA_DIR/<ENV_NAME>
+            - $START_DATA_DIR/<ENV_NAME>/.venv
+            - $START_DATA_DIR/<ENV_NAME>/.env
+            - $START_DATA_DIR/<ENV_NAME>/venv
+            - $PWD/<ENV_NAME>
+            - $PWD/<ENV_NAME>/.venv
+            - $PWD/<ENV_NAME>/.env
+            - $PWD/<ENV_NAME>/venv
+
         To activate on different shell, use following commands:
-        - Powershell: Invoke-Expression (&start env activate <ENV_NAME>)
-        - cmd: Not support due to the conflict of start
-        - bash/zsh: eval "$(start env activate <ENV_NAME>)"
-        - fish: start env activate <ENV_NAME>| source
-        - csh/tcsh: eval `start env activate <ENV_NAME>`
+            - Powershell: Invoke-Expression (&start env activate <ENV_NAME>)
+            - cmd: Not support due to the conflict of start
+            - bash/zsh: eval "$(start env activate <ENV_NAME>)"
+            - fish: start env activate <ENV_NAME>| source
+            - csh/tcsh: eval `start env activate <ENV_NAME>`
         """
-        env_path = None
-        if env_name == ".":
-            for env in DEFAULT_ENV:
-                if env_path := DependencyManager.ensure_path(env):
-                    break
-            else:
-                Error("No virtual environment found.")
-        else:
-            for path in [self._data_dir, os.getcwd()]:
-                env_path = os.path.join(path, env_name)
-                if os.path.exists(env_path):
-                    break
-            else:
-                Error(f"Virtual environment {env_name} not found.")
-        if env_path is None:
-            return
-        active_cmd = display_activate_cmd(str(env_path), prompt=False)
-        print(active_cmd)
+        for base_dir in (self._data_dir, os.getcwd()):
+            for env in (".", *DEFAULT_ENV):
+                env_path = os.path.join(base_dir, env_name, env)
+                if self.is_env_dir(env_path):
+                    active_cmd = display_activate_cmd(env_path, prompt=False)
+                    print(active_cmd)
+                    return
+        Error(f"Virtual environment {env_name} not found.")
 
     def create(
         self,
