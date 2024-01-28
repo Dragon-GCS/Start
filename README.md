@@ -98,6 +98,10 @@ FLAGS
         Type: bool
         Default to give the virtual environment access to system packages, add
         "--without_system_packages" to skip this.
+    --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Display install details
 ```
 
 ### `start install`
@@ -117,6 +121,10 @@ FLAGS
         else start will parse each line as a package name to install. As default, if not found
         "pyproject.toml", start will try to find "requirements.txt" When virtual environment
         is not activated, start will try to find interpreter in .venv, .env orderly.
+    --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Display install details
 ```
 
 ### `start add`
@@ -139,6 +147,10 @@ FLAGS
         Type: str
         Dependency file name, default is pyproject.toml (Only support toml file now). If
         file not exists, it will be create.
+    --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Display install details
 ```
 
 ### `start remove`
@@ -161,6 +173,10 @@ FLAGS
         Type: str
         Dependency file name, default is pyproject.toml (Only support toml file now).
         If file not exists, it will be create.
+    --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Display uninstall details
 ```
 
 ### `start show`
@@ -271,6 +287,11 @@ DESCRIPTION
 ```
 
 ## Changelog
+
+### v0.5.1
+
+- fix: Not modify the dependency file when dependencies are not changed
+- feat: Add "--verbose" to display install and uninstall details
 
 ### v0.5.0
 

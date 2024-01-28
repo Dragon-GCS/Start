@@ -159,11 +159,12 @@ class Start:
         method: Literal["add", "remove"],
         dev: bool = False,
         dependency: str = "pyproject.toml",
+        verbose: bool = False,
     ):
         if not dependency.endswith(".toml"):
             Warn("Only support toml file now")
             return
-        pip = PipManager(DependencyManager.find_executable())
+        pip = PipManager(DependencyManager.find_executable(), verbose=verbose)
         operate = pip.install if method == "add" else pip.uninstall
         result = operate(*packages)
         if result:
@@ -171,7 +172,13 @@ class Start:
                 method=method, packages=result, file=dependency, dev=dev
             )
 
-    def add(self, *packages, dev: bool = False, dependency: str = "pyproject.toml"):
+    def add(
+        self,
+        *packages,
+        dev: bool = False,
+        dependency: str = "pyproject.toml",
+        verbose: bool = False,
+    ):
         """Install packages and add to the dependency file.
 
         Args:
@@ -182,10 +189,18 @@ class Start:
             dependency:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
+            verbose:
+                Display install details
         """
-        self._modify(*packages, method="add", dev=dev, dependency=dependency)
+        self._modify(*packages, method="add", dev=dev, dependency=dependency, verbose=verbose)
 
-    def remove(self, *packages, dev: bool = False, dependency: str = "pyproject.toml"):
+    def remove(
+        self,
+        *packages,
+        dev: bool = False,
+        dependency: str = "pyproject.toml",
+        verbose: bool = False,
+    ):
         """Uninstall packages and remove from the dependency file.
 
         Args:
@@ -196,8 +211,10 @@ class Start:
             dependency:
                 Dependency file name, default is pyproject.toml (Only support
                 toml file now). If file not exists, it will be create.
+            verbose:
+                Display uninstall details
         """
-        self._modify(*packages, method="remove", dev=dev, dependency=dependency)
+        self._modify(*packages, method="remove", dev=dev, dependency=dependency, verbose=verbose)
 
     def show(self, *packages):
         """Same as "pip show" command.

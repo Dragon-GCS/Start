@@ -1,8 +1,13 @@
+import contextlib
 import os
 import re
 import sys
+import time
 import venv
-from subprocess import CalledProcessError, CompletedProcess, check_call, run
+from io import TextIOWrapper
+from subprocess import PIPE, CalledProcessError, CompletedProcess, check_call, run
+from tempfile import TemporaryFile
+from threading import Thread
 from types import SimpleNamespace
 from typing import Dict, Generator, Iterable, List, Literal, Optional, Tuple
 
@@ -184,10 +189,12 @@ class DependencyManager:
             else config["project"]["optional-dependencies"]["dev"]
         )
 
+        modified = False
         if method == "add":
             for package in packages:
                 if package not in dependencies:
                     dependencies.append(package)
+                    modified = True
             dependencies.sort()
         elif method == "remove":
             neat_dependencies = [neat_package_name(p) for p in dependencies]
@@ -195,10 +202,11 @@ class DependencyManager:
                 if package in neat_dependencies:
                     dependencies.pop(neat_dependencies.index(package))
                     neat_dependencies.remove(package)
-
+                    modified = True
+        if not modified:
+            return
         with open(file_path, "w", encoding="utf8") as f:
             rtoml.dump(config, f, pretty=True)
-
         Success("Updated dependency file: " + file_path)
 
     @classmethod
@@ -242,28 +250,81 @@ class DependencyManager:
         return base_interpreter
 
 
+@contextlib.contextmanager
+def capture_output(verbose: bool = False) -> Generator[int | TextIOWrapper, None, None]:
+    if not verbose:
+        yield PIPE
+        return
+
+    stdout = TemporaryFile("w+", buffering=1, newline="\n")
+    running = True
+
+    def _read_output():
+        # wait for the first data to read
+        while not stdout.tell():
+            time.sleep(0.1)
+        ptr, _cur_ptr = 0, 0
+        while running:
+            _cur_ptr = stdout.tell()
+            # wait for new data to read
+            if _cur_ptr == ptr:
+                time.sleep(0.1)
+                continue
+            # seek to the last read position
+            stdout.seek(ptr)
+            try:
+                data = stdout.readline()
+            except UnicodeDecodeError:
+                # if decode failed, seek to the last read position
+                # wait newline to be written and try to read again
+                stdout.seek(ptr)
+                continue
+            print(data, end="")
+            # ? the progress bar will by read twice without this
+            if data.endswith("00:00\n"):
+                ptr += len(data)
+            ptr += len(data)
+            stdout.seek(_cur_ptr)
+        stdout.seek(ptr)
+        print(stdout.read(), end="")
+
+    t = Thread(target=_read_output)
+    t.start()
+    yield stdout
+    running = False
+    t.join()
+
+
 class PipManager:
     """Parse the pip output to get the install or uninstall information.
 
     Args:
         executable: The python executable path
+        verbose: Whether to display the pip execution progress
     """
 
     stdout: List[str]
     stderr: List[str]
     return_code: int
 
-    def __init__(self, executable: str):
+    def __init__(self, executable: str, verbose: bool = False):
         self.cmd = [executable, "-m", "pip"]
         self.execu = executable
+        self.verbose = verbose
 
     def execute(self, cmd: List[str]):
         """Execute the pip command."""
         cmd = self.cmd + cmd
-        try:
-            self.set_outputs(run(cmd, text=True, capture_output=True, check=True))
-        except CalledProcessError as output:
-            self.set_outputs(output)
+        with capture_output(self.verbose) as stdout:
+            try:
+                output = run(cmd, text=True, stdout=stdout, stderr=stdout, check=True)
+                # if verbose is True, the output has been displayed in capture_output
+                if self.verbose and not isinstance(stdout, int):
+                    stdout.seek(0)
+                    output.stdout = stdout.read()
+                self.set_outputs(output)
+            except CalledProcessError as output:
+                self.set_outputs(output)
         return self
 
     def install(self, *packages: str, upgrade: bool = False) -> List[str]:
@@ -315,6 +376,9 @@ class PipManager:
 
     def show_output(self):
         """Display the pip command output"""
+        # if verbose is True, the output has been displayed
+        if self.verbose:
+            return
         for line in self.stdout:
             line = line.strip()
             if line.startswith("Requirement already satisfied"):
@@ -325,10 +389,8 @@ class PipManager:
             Error("\n".join(self.stderr))
 
     def parse_output(self, output: str) -> List[str]:
-        """Parse the output of pip to extract the package name."""
+        """Parse the output of pip to extract the installed package name."""
         output = output.strip()
-        if output.startswith("Requirement already satisfied"):
-            return [neat_package_name(output.split()[3])]
         if output.startswith("Successfully installed"):
             return [name.rsplit("-", 1)[0] for name in output.split()[2:]]
         return []
