@@ -45,6 +45,10 @@ FLAGS
     --force=FORCE
         Type: bool
         Remove the existing virtual environment if it exists
+    --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Display install details
     --without_pip=WITHOUT_PIP
         Type: bool
         Default to install pip in the virtual environment, add "--without_pip" to skip this.
@@ -85,6 +89,10 @@ FLAGS
     --force=FORCE
         Type: bool
         Remove the existing virtual environment if it exists
+    --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Display install details
     --without_pip=WITHOUT_PIP
         Type: bool
         Default to install pip in the virtual environment, add "--without_pip" to skip this.
@@ -262,6 +270,10 @@ FLAGS
         Type: bool
         Default: False
         Remove the existing virtual environment if it exists
+    -v, --verbose=VERBOSE
+        Type: bool
+        Default: False
+        Display the pip command output
     --without_pip=WITHOUT_PIP
         Type: bool
         Default: False
@@ -287,6 +299,10 @@ DESCRIPTION
 ```
 
 ## Changelog
+
+### v0.5.3
+
+- feat: add `--verbose` for `init`, `new`, `install`, `env create` command
 
 ### v0.5.2
 

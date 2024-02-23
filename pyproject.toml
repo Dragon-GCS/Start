@@ -4,7 +4,7 @@ requires = ['setuptools']
 
 [project]
 name = 'start-manager'
-version = '0.5.2'
+version = '0.5.3'
 description = 'A python package manager based on pip and venv'
 readme = 'README.md'
 requires-python = '>=3.10'

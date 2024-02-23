@@ -23,6 +23,7 @@ class Start:
         require: str = "",
         vname: str = ".venv",
         force: bool = False,
+        verbose: bool = False,
         without_pip: bool = False,
         without_upgrade: bool = False,
         with_template: bool = False,
@@ -40,6 +41,8 @@ class Start:
                 Name of the virtual environment, default is ".venv"
             force:
                 Remove the existing virtual environment if it exists
+            verbose:
+                Display install details
             without_pip:
                 Default to install pip in the virtual environment, add
                 "--without-pip" to skip this.
@@ -68,6 +71,7 @@ class Start:
             packages=packages,
             require=require,
             force=force,
+            verbose=verbose,
             without_pip=without_pip,
             without_upgrade=without_upgrade,
             without_system_packages=without_system_packages,
@@ -87,6 +91,7 @@ class Start:
         require: str = "",
         vname: str = ".venv",
         force: bool = False,
+        verbose: bool = False,
         without_pip: bool = False,
         without_upgrade: bool = False,
         with_template: bool = False,
@@ -102,6 +107,8 @@ class Start:
                 Dependency file name. Toml file or plain text file.
             force:
                 Remove the existing virtual environment if it exists
+            verbose:
+                Display install details
             without_pip:
                 Default to install pip in the virtual environment, add
                 "--without-pip" to skip this.
@@ -123,13 +130,14 @@ class Start:
             require=require,
             vname=vname,
             force=force,
+            verbose=verbose,
             without_pip=without_pip,
             without_upgrade=without_upgrade,
             with_template=with_template,
             without_system_packages=without_system_packages,
         )
 
-    def install(self, dependency: str = ""):
+    def install(self, dependency: str = "", verbose: bool = False):
         """Install packages in specified dependency file.
 
         Args:
@@ -140,6 +148,8 @@ class Start:
                 "pyproject.toml", start will try to find "requirements.txt"
                 When virtual environment is not activated, start will try to
                 find interpreter in .venv, .env orderly.
+            verbose:
+                Display install details
         """
         if dependency:
             packages = DependencyManager.load_dependencies(dependency)
@@ -151,7 +161,7 @@ class Start:
         else:
             Error("No dependency file found")
             return
-        PipManager(DependencyManager.find_executable()).install(*packages)
+        PipManager(DependencyManager.find_executable(), verbose=verbose).install(*packages)
 
     def _modify(
         self,

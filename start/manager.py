@@ -290,7 +290,7 @@ def capture_output(verbose: bool = False) -> Generator[int | TextIOWrapper, None
 
     t = Thread(target=_read_output)
     t.start()
-    yield stdout
+    yield stdout  # type: ignore # return the file object type
     running = False
     t.join()
 
@@ -466,8 +466,9 @@ class ExtEnvBuilder(venv.EnvBuilder):
 
     Args:
         packages: Packages to install after create the virtual environment
-        require: Dependency file name, toml file or plain text file.
+        require: Dependency file name, toml file or plain text file
         force: Remove the existing virtual environment if it exists
+        verbose: Display the pip command output
         without_pip: Dont install pip in the virtual environment
         without_upgrade: Dont upgrade core package(pip & setuptools) and
             packages to install in the virtual environment
@@ -481,6 +482,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
         packages: List[str] | None = None,
         require: str = "",
         force: bool = False,
+        verbose: bool = False,
         without_pip: bool = False,
         without_upgrade: bool = False,
         without_system_packages: bool = False,
@@ -496,11 +498,12 @@ class ExtEnvBuilder(venv.EnvBuilder):
             self.packages.extend(DependencyManager.load_dependencies(require))
         self.upgrade_packages = not without_upgrade
         self.init_repo = init_repo
+        self.verbose = verbose
 
     def post_setup(self, context: SimpleNamespace):
         """Install and upgrade packages after created environment."""
         if self.with_pip and (self.upgrade_packages or self.packages):
-            pip = PipManager(context.env_exe)
+            pip = PipManager(context.env_exe, self.verbose)
             if self.upgrade_packages:
                 Info("Upgrading core packages...")
                 pip.install("pip", "setuptools", upgrade=True)
@@ -562,6 +565,7 @@ class EnvManager:
         *packages,
         require: str = "",
         force: bool = False,
+        verbose: bool = False,
         without_pip: bool = False,
         without_upgrade: bool = False,
         without_system_packages: bool = False,
@@ -578,6 +582,8 @@ class EnvManager:
                 Dependency file name. Toml file or plain text file.
             force:
                 Remove the existing virtual environment if it exists
+            verbose:
+                Display the pip command output
             without_pip:
                 Default to install pip in the virtual environment, add
                 "--without-pip" to skip this.
@@ -601,6 +607,7 @@ class EnvManager:
             packages=packages,
             require=require,
             force=force,
+            verbose=verbose,
             without_pip=without_pip,
             without_upgrade=without_upgrade,
             without_system_packages=without_system_packages,
