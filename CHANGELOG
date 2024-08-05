@@ -1,0 +1,119 @@
+# Changelog
+
+## v0.5.3
+
+- feat: add `--verbose` for `init`, `new`, `install`, `env create` command
+
+## v0.5.2
+
+- fix: Error when activate an relative path virtual environment
+
+## v0.5.1
+
+- fix: Not modify the dependency file when dependencies are not changed
+- feat: Add "--verbose" to display install and uninstall details
+
+## v0.5.0
+
+- feat: add `start env` command to manager environments
+
+## v0.4.7
+
+- fix: correct the activate command
+
+## v0.4.6
+
+- feat: save prev dependencies when fix config file
+- fix: error init when config.project.dependencies is an empty list
+
+## v0.4.5
+
+- fix: do nothing where no package to install
+- feat: all create .gitignore where detect git
+
+## v0.4.4
+
+- fix: skip empty line in txt dependency file
+
+## v0.4.3
+
+- fix: catch error when install/uninstall package with pip
+
+## v0.4.2
+
+- fix: skip git init when repo exists
+- feat: change prompt message for activate virtual environment
+
+## v0.4.1
+
+- fix: error display package name caused by str.rstrip remove the 'm' character
+
+## v0.4
+
+- feat: check if git available and init new project as a repo
+
+## v0.3.4
+
+- feat: replace without_template with with_template, default not to create template files
+- fix: rename template folder `test` -> `tests`
+
+## v0.3.3
+
+- feat: add prompt message when start install package
+
+## v0.3.2
+
+- feat: add `--require` flag to install package by dependency file when init project
+
+## v0.3.1
+
+- feat: without-template exclude pyproject.toml
+
+## v0.3
+
+- add: `--skip-template` flag in `start new` and `start init`
+- fix: activate command on unix platform
+
+## v0.2.8
+
+- fix: cant record package with special format
+- fix: unexpected blank line in template
+- fix: package name neat, error cmd in <list> command
+
+## v0.2.7
+
+- fix: add unexpected package to toml file
+- refactor: remove useless argument in PipManager.execute
+- refactor: rename PipManager.check_output() to show_output()
+
+## v0.2.6
+
+- fix: dependency file check error
+
+## v0.2.5
+
+- fix: Error adding package to toml file when package was not installed correctly
+- fix: error parsing optional installed package name
+- fix: error when not found packages
+- fix: executable find order
+
+## v0.2.4
+
+- fix: bug when print some word start with 'm'
+- fix: change all package name to lower
+
+## v0.2.3
+
+- fix: sys.executable as default interpreter
+
+## v0.2.2
+
+- fix: decode error of subprocess' output
+
+## v0.2.1
+
+- fix: wrong display of last branch of dependencies tree
+
+## v0.2
+
+- add: `start show` and `start relist` command

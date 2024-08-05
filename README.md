@@ -22,398 +22,269 @@ Install from github
 
 ## Usage
 
-### `start init`
+See auto-generated [documentation](./docs/generated_docs.md)
 
 ```shell
-SYNOPSIS
-    start init <flags> [PACKAGES]...
-
-DESCRIPTION
-    Use current directory as the project name and create a new project at the current directory.
-
-POSITIONAL ARGUMENTS
-    PACKAGES
-        Packages to install after create the virtual environment
-
-FLAGS
-    --vname=VNAME
-        Type: str
-        Name of the virtual environment, default is ".venv"
-    --require=REQUIRE:
-        Type: str
-        Dependency file name. Toml file or plain text file.
-    --force=FORCE
-        Type: bool
-        Remove the existing virtual environment if it exists
-    --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Display install details
-    --without_pip=WITHOUT_PIP
-        Type: bool
-        Default to install pip in the virtual environment, add "--without_pip" to skip this.
-    --without_upgrade=WITHOUT_UPGRADE
-        Type: bool
-        Default to upgrade core package(pip & setuptools) and all packages to install in the
-        virtual environment, add "--without_upgrade" to skip this.
-    --with_template=WITH_TEMPLATE:
-        Add "--with_template" to create template files
-    --without_system_packages=WITHOUT_SYSTEM_PACKAGES
-        Type: bool
-        Default to give the virtual environment access to system packages, add
-        "--without_system_packages" to skip this.
+```console
+start [OPTIONS] COMMAND [ARGS]...
 ```
 
-### `start new`
+**Options**:
 
-```shell
-SYNOPSIS
-    start new PROJECT_NAME <flags> [PACKAGES]...
+- `--help`: Show this message and exit.
 
-DESCRIPTION
-    Create a new project. Create a virtual environment and install specified packages.
+**Commands**:
 
-POSITIONAL ARGUMENTS
-    PROJECT_NAME
-        Name of the project
-    PACKAGES
-        Packages to install after create the virtual environment
-
-FLAGS
-    --vname=VNAME
-        Type: str
-        Name of the virtual environment, default is ".venv"
-    --require=REQUIRE:
-        Type: str
-        Dependency file name. Toml file or plain text file.
-    --force=FORCE
-        Type: bool
-        Remove the existing virtual environment if it exists
-    --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Display install details
-    --without_pip=WITHOUT_PIP
-        Type: bool
-        Default to install pip in the virtual environment, add "--without_pip" to skip this.
-    --without_upgrade=WITHOUT_UPGRADE
-        Type: bool
-        Default to upgrade core package(pip & setuptools) and all packages to install in the
-        virtual environment, add "--without_upgrade" to skip this.
-    --with_template=WITH_TEMPLATE:
-        Add "--with_template" to create template files
-    --without_system_packages=WITHOUT_SYSTEM_PACKAGES
-        Type: bool
-        Default to give the virtual environment access to system packages, add
-        "--without_system_packages" to skip this.
-    --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Display install details
-```
-
-### `start install`
-
-```shell
-SYNOPSIS
-    start install <flags>
-
-DESCRIPTION
-    Install packages in specified dependency file.
-
-FLAGS
-    --dependency=DEPENDENCY
-        Type: str
-        Default: ''
-        Dependency file name. If given a toml file, start will parse "project.dependencies",
-        else start will parse each line as a package name to install. As default, if not found
-        "pyproject.toml", start will try to find "requirements.txt" When virtual environment
-        is not activated, start will try to find interpreter in .venv, .env orderly.
-    --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Display install details
-```
+- `add`: Install packages and add to the dependency...
+- `env`: Manager environments.
+- `init`: Use current directory as the project name...
+- `install`: Install packages in specified dependency...
+- `list`: Display all installed packages.
+- `new`: Create a new project and virtual...
+- `remove`: Uninstall packages and remove from the...
+- `show`: Show information about installed packages.
 
 ### `start add`
 
-```shell
-SYNOPSIS
-    start add <flags> [PACKAGES]...
+Install packages and add to the dependency file.
 
-DESCRIPTION
-    Install packages and add to the dependency file.
+**Usage**:
 
-POSITIONAL ARGUMENTS
-    PACKAGES
-
-FLAGS
-    --dev=DEV
-        Type: bool
-        Add packages as development dependency
-    --dependency=DEPENDENCY
-        Type: str
-        Dependency file name, default is pyproject.toml (Only support toml file now). If
-        file not exists, it will be create.
-    --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Display install details
+```console
+start add [OPTIONS] PACKAGES...
 ```
 
-### `start remove`
+**Arguments**:
 
-```shell
-SYNOPSIS
-    start remove <flags> [PACKAGES]...
+- `PACKAGES...`: Packages to install and record in the dependency file  [required]
 
-DESCRIPTION
-    Uninstall packages and remove from the dependency file.
+**Options**:
 
-POSITIONAL ARGUMENTS
-    PACKAGES
+- `-D, --dev`: Add packages as development dependency
+- `-d, --dependency TEXT`: Dependency file name, default is pyproject.toml (Only support toml file now). If file not exists, it will be created.  [default: pyproject.toml]
+- `-v, --verbose`: Display install details
+- `--help`: Show this message and exit.
 
-FLAGS
-    --dev=DEV
-        Type: bool
-        Remove packages from development dependency
-    --dependency=DEPENDENCY
-        Type: str
-        Dependency file name, default is pyproject.toml (Only support toml file now).
-        If file not exists, it will be create.
-    --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Display uninstall details
+### `start env`
+
+Manager environments.
+
+**Usage**:
+
+```console
+start env [OPTIONS] COMMAND [ARGS]...
 ```
 
-### `start show`
+**Options**:
 
-```shell
-SYNOPSIS
-    start show [PACKAGES]...
+- `--help`: Show this message and exit.
 
-DESCRIPTION
-    Same as "pip show" command.
+**Commands**:
 
-POSITIONAL ARGUMENTS
-    PACKAGES
-        Packages to show
+- `activate`: Display the activate command for the...
+- `create`: Create a virtual environment and install...
+- `list`: List all virtual environments.
+
+#### `start env activate`
+
+Display the activate command for the virtual environment.
+
+Start will check following path to find the virtual environment:
+
+- `$START_DATA_DIR/<ENV_NAME>`
+- `$START_DATA_DIR/<ENV_NAME>/.venv`
+- `$START_DATA_DIR/<ENV_NAME>/.env`
+- `$START_DATA_DIR/<ENV_NAME>/venv`
+- `$(pwd)/<ENV_NAME>`
+- `$(pwd)/<ENV_NAME>/.venv`
+- `$(pwd)/<ENV_NAME>/.env`
+- `$(pwd)/<ENV_NAME>/venv`
+
+To activate on different shell, use following commands:
+
+- Powershell: Invoke-Expression (&start env activate <ENV_NAME>)
+- cmd: Not support due to the conflict of start
+- bash/zsh: eval "$(start env activate <ENV_NAME>)"
+- fish: start env activate <ENV_NAME>| source
+- csh/tcsh: eval `start env activate <ENV_NAME>`
+
+**Usage**:
+
+```console
+start env activate [OPTIONS] ENV_NAME
 ```
+
+**Arguments**:
+
+- `ENV_NAME`: Name for environment  [required]
+
+**Options**:
+
+- `--help`: Show this message and exit.
+
+#### `start env create`
+
+Create a virtual environment and install specified packages.
+
+**Usage**:
+
+```console
+start env create [OPTIONS] ENV_NAME [PACKAGES]...
+```
+
+**Arguments**:
+
+- `ENV_NAME`: Name of the virtual environment  [required]
+- `[PACKAGES]...`: Packages to install after create the virtual environment
+
+**Options**:
+
+- `-r, --require TEXT`: Dependency file name. Toml file or plain text file
+- `-f, --force`: Remove the existing virtual environment if it exists
+- `-v, --verbose`: Display install details
+- `--without-pip / --with-pip`: Install pip in the virtual environment  [default: with-pip]
+- `--without-upgrade / --with-upgrade`: Upgrade core package(pip & setuptools) and all packages to install in the virtual environment  [default: with-upgrade]
+- `--without-system-packages / --with-system-packages`: Give the virtual environment access to system packages  [default: with-system-packages]
+- `--help`: Show this message and exit.
+
+#### `start env list`
+
+List all virtual environments.
+
+**Usage**:
+
+```console
+start env list [OPTIONS]
+```
+
+**Options**:
+
+- `--help`: Show this message and exit.
+
+### `start init`
+
+Use current directory as the project name and create a new project at the current directory.
+
+**Usage**:
+
+```console
+start init [OPTIONS] [PACKAGES]...
+```
+
+**Arguments**:
+
+- `[PACKAGES]...`: Packages to install after create the virtual environment
+
+**Options**:
+
+- `-r, --require TEXT`: Dependency file name. Toml file or plain text file
+- `-v, --vname TEXT`: Name of the virtual environment  [default: .venv]
+- `-f, --force`: Remove the existing virtual environment if it exists
+- `-v, --verbose`: Display install details
+- `--without-pip / --with-pip`: Install pip in the virtual environment  [default: with-pip]
+- `--without-upgrade / --with-upgrade`: Upgrade core package(pip & setuptools) and all packages to be installed in the virtual environment  [default: with-upgrade]
+- `--with-template / --without-template`: Create template files  [default: without-template]
+- `--without-system-packages / --with-system-packages`: Give the virtual environment access to system packages  [default: with-system-packages]
+- `--help`: Show this message and exit.
+
+### `start install`
+
+Install packages in specified dependency file.
+
+**Usage**:
+
+```console
+start install [OPTIONS] [DEPENDENCY]
+```
+
+**Arguments**:
+
+- `[DEPENDENCY]`: Dependency file name. If given a toml file, start will parse'project.dependencies', else start will parse each line asa package name to install. As default, if not found'pyproject.toml', start will try to find 'requirements.txt'When virtual environment is not activated, start will try tofind interpreter in .venv, .env orderly.
+
+**Options**:
+
+- `-v, --verbose`: Display install details
+- `--help`: Show this message and exit.
 
 ### `start list`
 
-```shell
-SYNOPSIS
-    start list <flags>
+Display all installed packages.
 
-DESCRIPTION
-    Display all installed packages.
+**Usage**:
 
-FLAGS
-    --tree=TREE
-        Type: bool
-        Display installed packages in a tree structure
-    --dep=DEP
-        Type: bool
-        Display installed packages in a dependency file
-    --dev=DEV
-        Type: bool
-        Display installed packages in development dependency
-    --dependency=DEPENDENCY
-        Type: str
-        Dependency file name, default is pyproject.toml (Only support toml file now).
-        Only take effect when "dep" or "dev"  is True.
+```console
+start list [OPTIONS]
 ```
 
-### `start env activate`
+**Options**:
 
-```shell
-SYNOPSIS
-    start env activate ENV_NAME
+- `-t, --tree`: Display installed packages in a tree structure
+- `-D, --dev`: Display installed packages in development dependency
+- `-d, --dependency TEXT`: Dependency file name
+- `--help`: Show this message and exit.
 
-DESCRIPTION
-    To activate on different shell, use following commands:
-    - Powershell: Invoke-Expression (&start env activate <ENV_NAME>)
-    - cmd: Not support due to the conflict of start
-    - bash/zsh: eval "$(start env activate <ENV_NAME>)"
-    - fish: start env activate <ENV_NAME>| source
-    - csh/tcsh: eval `start env activate <ENV_NAME>`
+### `start new`
 
-POSITIONAL ARGUMENTS
-    ENV_NAME
-        Type: str
+Create a new project and virtual environment, install the specified packages.
+
+**Usage**:
+
+```console
+start new [OPTIONS] PROJECT_NAME [PACKAGES]...
 ```
 
-### `start env create`
+**Arguments**:
 
-```shell
-SYNOPSIS
-    start env create ENV_NAME <flags> [PACKAGES]...
+- `PROJECT_NAME`: Name of the project  [required]
+- `[PACKAGES]...`: Packages to install after create the virtual environment
 
-DESCRIPTION
-    Create a virtual environment and record it.
+**Options**:
 
-POSITIONAL ARGUMENTS
-    ENV_NAME
-        Type: str
-        Name of the virtual environment
-    PACKAGES
-        Packages to install after create the virtual environment
+- `-r, --require TEXT`: Dependency file name. Toml file or plain text file
+- `-v, --vname TEXT`: Name of the virtual environment  [default: .venv]
+- `-f, --force`: Remove the existing virtual environment if it exists
+- `-v, --verbose`: Display install details
+- `--without-pip / --with-pip`: Install pip in the virtual environment  [default: with-pip]
+- `--without-upgrade / --with-upgrade`: Upgrade core package(pip & setuptools) and all packages to be installed in the virtual environment  [default: with-upgrade]
+- `--with-template / --without-template`: Create template files  [default: without-template]
+- `--without-system-packages / --with-system-packages`: Give the virtual environment access to system packages  [default: with-system-packages]
+- `--help`: Show this message and exit.
 
-FLAGS
-    -r, --require=REQUIRE
-        Type: str
-        Default: ''
-        Dependency file name. Toml file or plain text file.
-    -f, --force=FORCE
-        Type: bool
-        Default: False
-        Remove the existing virtual environment if it exists
-    -v, --verbose=VERBOSE
-        Type: bool
-        Default: False
-        Display the pip command output
-    --without_pip=WITHOUT_PIP
-        Type: bool
-        Default: False
-        Default to install pip in the virtual environment, add "--without-pip" to skip this.
-    --without_upgrade=WITHOUT_UPGRADE
-        Type: bool
-        Default: False
-        Default to upgrade core package(pip & setuptools) and all packages to install in the virtual environment, add "--without-upgrade" to skip this.
-    --without_system_packages=WITHOUT_SYSTEM_PACKAGES
-        Type: bool
-        Default: False
-        Default to give the virtual environment access to system packages, add "--without-system-packages" to skip this.
+### `start remove`
+
+Uninstall packages and remove from the dependency file.
+
+**Usage**:
+
+```console
+start remove [OPTIONS] PACKAGES...
 ```
 
-### `start env list`
+**Arguments**:
 
-```shell
-SYNOPSIS
-    start env list -
+- `PACKAGES...`: Packages to uninstall and remove from the dependency file  [required]
 
-DESCRIPTION
-    List all virtual environments.
+**Options**:
+
+- `-D, --dev`: Remove packages from development dependency
+- `-d, --dependency TEXT`: Dependency file name, default is pyproject.toml (Only support toml file now). If file not exists, it will be created.  [default: pyproject.toml]
+- `-v, --verbose`: Display uninstall details
+- `--help`: Show this message and exit.
+
+### `start show`
+
+Show information about installed packages.
+
+**Usage**:
+
+```console
+start show [OPTIONS] PACKAGES...
 ```
 
-## Changelog
+**Arguments**:
 
-### v0.5.3
+- `PACKAGES...`: Packages to show  [required]
 
-- feat: add `--verbose` for `init`, `new`, `install`, `env create` command
+**Options**:
 
-### v0.5.2
-
-- fix: Error when activate an relative path virtual environment
-
-### v0.5.1
-
-- fix: Not modify the dependency file when dependencies are not changed
-- feat: Add "--verbose" to display install and uninstall details
-
-### v0.5.0
-
-- feat: add `start env` command to manager environments
-
-### v0.4.7
-
-- fix: correct the activate command
-
-### v0.4.6
-
-- feat: save prev dependencies when fix config file
-- fix: error init when config.project.dependencies is an empty list
-
-### v0.4.5
-
-- fix: do nothing where no package to install
-- feat: all create .gitignore where detect git
-
-### v0.4.4
-
-- fix: skip empty line in txt dependency file
-
-### v0.4.3
-
-- fix: catch error when install/uninstall package with pip
-
-### v0.4.2
-
-- fix: skip git init when repo exists
-- feat: change prompt message for activate virtual environment
-
-### v0.4.1
-
-- fix: error display package name caused by str.rstrip remove the 'm' character
-
-### v0.4
-
-- feat: check if git available and init new project as a repo
-
-### v0.3.4
-
-- feat: replace without_template with with_template, default not to create template files
-- fix: rename template folder `test` -> `tests`
-
-### v0.3.3
-
-- feat: add prompt message when start install package
-
-### v0.3.2
-
-- feat: add `--require` flag to install package by dependency file when init project
-
-### v0.3.1
-
-- feat: without-template exclude pyproject.toml
-
-### v0.3
-
-- add: `--skip-template` flag in `start new` and `start init`
-- fix: activate command on unix platform
-
-### v0.2.8
-
-- fix: cant record package with special format
-- fix: unexpected blank line in template
-- fix: package name neat, error cmd in <list> command
-
-### v0.2.7
-
-- fix: add unexpected package to toml file
-- refactor: remove useless argument in PipManager.execute
-- refactor: rename PipManager.check_output() to show_output()
-
-### v0.2.6
-
-- fix: dependency file check error
-
-### v0.2.5
-
-- fix: Error adding package to toml file when package was not installed correctly
-- fix: error parsing optional installed package name
-- fix: error when not found packages
-- fix: executable find order
-
-### v0.2.4
-
-- fix: bug when print some word start with 'm'
-- fix: change all package name to lower
-
-### v0.2.3
-
-- fix: sys.executable as default interpreter
-
-### v0.2.2
-
-- fix: decode error of subprocess' output
-
-### v0.2.1
-
-- fix: wrong display of last branch of dependencies tree
-
-### v0.2
-
-- add: `start show` and `start relist` command
+- `--help`: Show this message and exit.
