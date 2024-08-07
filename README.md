@@ -1,5 +1,9 @@
 # Start
 
+**This project are consistent with PDM. In order to avoid duplicate wheel production, this repo has been achieved.**
+
+---
+
 A python package manager based on pip and venv, use `pyproject.toml` instead of `requirements.txt`
 
 ## install
