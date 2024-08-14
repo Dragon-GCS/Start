@@ -35,7 +35,7 @@ email = '87817321@qq.com'
 HOMEPAGE = 'https://github.com/Dragon-GCS/start'
 
 [project.scripts]
-start = 'start:app'
+start = 'start.cli:app'
 
 [project.optional-dependencies]
 dev = ['ruff']

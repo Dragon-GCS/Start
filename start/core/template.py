@@ -62,8 +62,7 @@ class Template:
         else:
             Warn(f"Folder '{folder_path}' already exists.")
 
-    def create_by_template(self):
-        ...
+    def create_by_template(self): ...
 
     def create_default(self):
         """Default template for project."""
@@ -83,7 +82,7 @@ class Template:
         self.write_file("main.py", MAIN_PY.format(project_name))
         self.write_file("README.md", "")
 
-    def create(self, with_template: bool = False):
+    def create(self, with_template: str):
         """Create project template at specified path.
 
         Args:

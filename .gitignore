@@ -9,6 +9,6 @@ build/
 **test**
 *.toml
 
-!/test
-!/test/**/*.py
+!/tests
+!/tests/**/*.py
 !pyproject.toml
