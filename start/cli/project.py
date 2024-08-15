@@ -1,15 +1,17 @@
 from os import path
 
-from typer import Argument, Option
+from typer import Context
 
+from start.cli import params as _p
 from start.core.dependency import DependencyManager
 from start.core.env_builder import ExtEnvBuilder
 from start.core.pip_manager import PipManager
-from start.logger import Error, Info, Success
 from start.core.template import Template
+from start.logger import Error, Info, Success
 
 
 def new(
+    ctx: Context,
     project_name: _p.ProjectName,
     packages: _p.Packages = [],
     require: _p.Require = "",
@@ -32,8 +34,9 @@ def new(
         force=force,
         verbose=verbose,
         with_pip=with_pip,
-        without_upgrade=without_upgrade,
-        without_system_packages=without_system_packages,
+        upgrade_core=without_upgrade,
+        system_site_packages=without_system_packages,
+        pip_args=ctx.args,
     ).create(path.join(project_name, vname))
     Success("Finish creating virtual environment.")
     # Create project directory from template
@@ -46,6 +49,7 @@ def new(
 
 
 def init(
+    ctx: Context,
     packages: _p.Packages = [],
     require: _p.Require = "",
     vname: _p.VName = ".venv",
@@ -59,8 +63,9 @@ def init(
     """Use current directory as the project name and create a new project at the current directory."""
 
     return new(
-        ".",
-        packages,
+        ctx=ctx,
+        project_name=".",
+        packages=packages,
         require=require,
         vname=vname,
         force=force,
@@ -72,7 +77,7 @@ def init(
     )
 
 
-def install(require: _p.Require = "", verbose: _p.Verbose = False):
+def install(ctx: Context, require: _p.Require = "", verbose: _p.Verbose = False):
     """Install packages in specified dependency file."""
 
     if require:
@@ -85,4 +90,6 @@ def install(require: _p.Require = "", verbose: _p.Verbose = False):
     else:
         Error("No dependency file found")
         return
-    PipManager(DependencyManager.find_executable(), verbose=verbose).install(*packages)
+    PipManager(DependencyManager.find_executable(), verbose=verbose).install(
+        *packages, pip_args=ctx.args
+    )

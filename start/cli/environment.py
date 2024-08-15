@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-from typer import Argument, Option
+from typer import Context
 
 from start.cli import params as _p
 from start.core.config import DEFAULT_ENV
@@ -55,6 +55,7 @@ def activate(env_name: _p.EnvName):
 
 
 def create(
+    ctx: Context,
     env_name: _p.EnvName,
     packages: _p.Packages = [],
     require: _p.Require = "",
@@ -74,9 +75,10 @@ def create(
         force=force,
         verbose=verbose,
         with_pip=with_pip,
-        without_upgrade=without_upgrade,
-        without_system_packages=without_system_packages,
+        upgrade_core=not without_upgrade,
+        system_site_packages=not without_system_packages,
         init_repo=False,
+        pip_args=ctx.args,
     ).create(env_path)
     Success("Finish creating virtual environment.")
 

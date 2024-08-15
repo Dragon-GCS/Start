@@ -22,48 +22,57 @@ INDENT = "  "
 
 
 @contextlib.contextmanager
-def capture_output(verbose: bool = False) -> Generator[int | TextIOWrapper, None, None]:
-    if not verbose:
-        yield PIPE
-        return
-
-    stdout = TemporaryFile("w+", buffering=1, newline="\n")
+def capture_output(verbose: bool = False) -> Generator[TextIOWrapper, None, None]:
+    stream = TemporaryFile("w+", buffering=1, newline="\n")
     running = True
 
     def _read_output():
+        import re
+
+        from rich.progress import Progress
+
         # wait for the first data to read
-        while not stdout.tell():
+        while not stream.tell():
             time.sleep(0.1)
         ptr, _cur_ptr = 0, 0
-        while running:
-            _cur_ptr = stdout.tell()
-            # wait for new data to read
-            if _cur_ptr == ptr:
-                time.sleep(0.1)
-                continue
-            # seek to the last read position
-            stdout.seek(ptr)
-            try:
-                data = stdout.readline()
-            except UnicodeDecodeError:
-                # if decode failed, seek to the last read position
-                # wait newline to be written and try to read again
-                stdout.seek(ptr)
-                continue
-            print(data, end="")
-            # ? the progress bar will by read twice without this
-            if data.endswith("00:00\n"):
-                ptr += len(data)
-            ptr += len(data)
-            stdout.seek(_cur_ptr)
-        stdout.seek(ptr)
-        print(stdout.read(), end="")
+        current_task = None
+        with Progress() as progress:
+            while running:
+                _cur_ptr = stream.tell()
+                # wait for new data to read
+                if _cur_ptr == ptr:
+                    time.sleep(0.1)
+                    continue
+                # seek to the last read position
+                stream.seek(ptr)
+                try:
+                    data = stream.readline()
+                    ptr = stream.tell()
+                except UnicodeDecodeError:
+                    # if decode failed, seek to the last read position
+                    # wait newline to be written and try to read again
+                    stream.seek(ptr)
+                    continue
+                if match := re.match(r"Progress (\d+) of (\d+)", data):
+                    if current_task is None:
+                        current_task = progress.add_task(
+                            description="\t", total=int(match.group(2))
+                        )
+                    progress.update(current_task, completed=int(match.group(1)))
+                else:
+                    current_task = None
+                    print(data.strip("\n"))
+        stream.seek(ptr)
+        print(stream.read(), end="")
 
     t = Thread(target=_read_output)
-    t.start()
-    yield stdout  # type: ignore # return the file object type
+    if verbose:
+        t.start()
+    yield stream
     running = False
-    t.join()
+    if verbose:
+        t.join()
+    stream.seek(0)
 
 
 class PipManager:
@@ -86,19 +95,16 @@ class PipManager:
     def execute(self, cmd: List[str]):
         """Execute the pip command."""
         cmd = self.cmd + cmd
-        with capture_output(self.verbose) as stdout:
-            try:
+        try:
+            with capture_output(self.verbose) as stdout:
                 output = run(cmd, text=True, stdout=stdout, stderr=stdout, check=True)
-                # if verbose is True, the output has been displayed in capture_output
-                if self.verbose and not isinstance(stdout, int):
-                    stdout.seek(0)
-                    output.stdout = stdout.read()
-                self.set_outputs(output)
-            except CalledProcessError as output:
-                self.set_outputs(output)
+            output.stdout = stdout.read()
+            self.set_outputs(output)
+        except CalledProcessError as output:
+            self.set_outputs(output)
         return self
 
-    def install(self, *packages: str, upgrade: bool = False) -> List[str]:
+    def install(self, *packages: str, pip_args: list[str]) -> List[str]:
         """Install packages.
 
         Args:
@@ -109,18 +115,17 @@ class PipManager:
         """
         if not packages:
             return []
-        cmd = ["install"]
-        if upgrade:
-            cmd.append("-U")
+        if self.verbose and not any(arg.startswith("--progress-bar") for arg in pip_args):
+            pip_args.append("--progress-bar=raw")
         Info("Start install packages: " + ", ".join(packages))
-        self.execute([*cmd, *packages]).show_output()
+        self.execute(["install", *packages, *pip_args]).show_output()
 
         installed_packages = set(
             [package for line in self.stdout for package in self.parse_output(line)]
         )
         return [package for package in packages if neat_package_name(package) in installed_packages]
 
-    def uninstall(self, *packages: str) -> List[str]:
+    def uninstall(self, *packages: str, pip_args: list[str]) -> List[str]:
         """Uninstall packages.
 
         Args:
@@ -128,7 +133,9 @@ class PipManager:
         Returns:
             packages: Success uninstalled packages
         """
-        self.execute(["uninstall", "-y", *packages]).show_output()
+        if not any(arg in ("-y", "--yes") for arg in pip_args):
+            pip_args.append("-y")
+        self.execute(["uninstall", *packages, *pip_args]).show_output()
         return [*packages]
 
     def set_outputs(self, output: CompletedProcess | CalledProcessError):

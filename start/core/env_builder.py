@@ -19,36 +19,35 @@ class ExtEnvBuilder(venv.EnvBuilder):
         require: Dependency file name, toml file or plain text file
         force: Remove the existing virtual environment if it exists
         verbose: Display the pip command output
-        without_pip: Dont install pip in the virtual environment
-        without_upgrade: Dont upgrade core package(pip & setuptools) and
+        with_pip: Install pip in the virtual environment
+        upgrade_core: Upgrade core package(pip & setuptools) and
             packages to install in the virtual environment
-        without_system_packages: Dont give the virtual environment access
+        system_site_packages: Dont give the virtual environment access
             to system packages
         init_repo: Try to init a git repository in the parent directory
+        pip_args: Extra arguments to pass to pip command
     """
 
     def __init__(
         self,
-        packages: List[str] | None = None,
+        packages: List[str],
         require: str = "",
         force: bool = False,
         verbose: bool = False,
         with_pip: bool = True,
-        without_upgrade: bool = False,
-        without_system_packages: bool = False,
+        upgrade_core: bool = False,
+        system_site_packages: bool = False,
         init_repo: bool = True,
+        pip_args: list[str] = [],
     ):
-        super().__init__(
-            clear=force,
-            system_site_packages=not without_system_packages,
-            with_pip=with_pip,
-        )
+        super().__init__(clear=force, system_site_packages=system_site_packages, with_pip=with_pip)
         self.packages = packages or []
         if require:
             self.packages.extend(DependencyManager.load_dependencies(require))
-        self.upgrade_packages = not without_upgrade
+        self.upgrade_core = upgrade_core
         self.init_repo = init_repo
         self.verbose = verbose
+        self.pip_args = pip_args
 
     def ensure_directories(
         self, env_dir: str | bytes | os.PathLike[str] | os.PathLike[bytes]
@@ -62,13 +61,13 @@ class ExtEnvBuilder(venv.EnvBuilder):
         """Install and upgrade packages after created environment."""
         Info(context.env_exe)
         pip = PipManager(context.env_exe, self.verbose)
-        if self.upgrade_packages:
+        if self.upgrade_core:
             Info("Upgrading core packages...")
-            pip.install("pip", "setuptools", upgrade=True)
+            pip.install("pip", "setuptools", pip_args=["--upgrade"])
 
         if self.packages:
             Info("Start installing packages...")
-            pip.install(*self.packages, upgrade=self.upgrade_packages)
+            pip.install(*self.packages, pip_args=self.pip_args)
         Info(str(self.packages))
 
         display_activate_cmd(context.env_dir)
