@@ -1,13 +1,14 @@
 from os import sep
 
-from typer import Argument, Exit, Option
+from typer import Exit
 
+from start.cli import params as _p
 from start.core.dependency import DependencyManager
 from start.core.pip_manager import PipManager
 from start.logger import Detail, Error, Info, Success, Warn
 
 
-def show(packages: list[str] = Argument(help="Packages to show", show_default=False)):
+def show(packages: _p.Packages):
     """Show information about installed packages."""
     pip = PipManager(DependencyManager.find_executable())
     pip.execute(["show", *packages])
@@ -17,15 +18,7 @@ def show(packages: list[str] = Argument(help="Packages to show", show_default=Fa
         Error("\n".join(pip.stderr))
 
 
-def list_packages(
-    tree: bool = Option(
-        False, "-t", "--tree", help="Display installed packages in a tree structure"
-    ),
-    dev: bool = Option(
-        False, "-D", "--dev", help="Display installed packages in development dependency"
-    ),
-    dependency: str = Option("", "-d", "--dependency", help="Dependency file name"),
-):
+def list_packages(tree: _p.Tree, dev: _p.Dev = False, dependency: _p.Dependency = ""):
     """Display all installed packages."""
 
     pip = PipManager(DependencyManager.find_executable())

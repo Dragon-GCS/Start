@@ -4,6 +4,7 @@ from pathlib import Path
 
 from typer import Argument, Option
 
+from start.cli import params as _p
 from start.core.config import DEFAULT_ENV
 from start.core.env_builder import ExtEnvBuilder
 from start.logger import Error, Info, Success
@@ -20,7 +21,7 @@ def is_env_dir(path: Path):
     return (path / bin_dir_name / "activate").is_file()
 
 
-def activate(env_name: str = Argument(help="Name for environment")):
+def activate(env_name: _p.EnvName):
     """Display the activate command for the virtual environment.
 
     Start will check following path to find the virtual environment:
@@ -54,34 +55,14 @@ def activate(env_name: str = Argument(help="Name for environment")):
 
 
 def create(
-    env_name: str = Argument(help="Name of the virtual environment", show_default=False),
-    packages: list[str] = Option(
-        None,
-        "-p",
-        "--packages",
-        help="Packages to install after create the virtual environment",
-        show_default=False,
-    ),
-    require: str = Option(
-        "", "-r", "--require", help="Dependency file name. Toml file or plain text file"
-    ),
-    force: bool = Option(
-        False, "-f", "--force", help="Remove the existing virtual environment if it exists"
-    ),
-    verbose: bool = Option(False, "-v", "--verbose", help="Display install details"),
-    with_pip: bool = Option(
-        True, "--with-pip/--without-pip", help="Install pip in the virtual environment"
-    ),
-    without_upgrade: bool = Option(
-        False,
-        "--without-upgrade",
-        help="Don't upgrade core package(pip & setuptools) and all packages to be installed in the virtual environment",
-    ),
-    without_system_packages: bool = Option(
-        False,
-        "--without-system-packages",
-        help="Don't give the virtual environment access to system packages",
-    ),
+    env_name: _p.EnvName,
+    packages: _p.Packages = [],
+    require: _p.Require = "",
+    force: _p.Force = False,
+    verbose: _p.Verbose = False,
+    with_pip: _p.WithPip = True,
+    without_upgrade: _p.WithoutUpgrade = False,
+    without_system_packages: _p.WithoutSystemPackages = False,
 ):
     """Create a virtual environment and install specified packages."""
 
