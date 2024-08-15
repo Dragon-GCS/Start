@@ -57,7 +57,7 @@ def activate(env_name: _p.EnvName):
 def create(
     ctx: Context,
     env_name: _p.EnvName,
-    packages: _p.Packages = [],
+    packages: _p.Packages,
     require: _p.Require = "",
     force: _p.Force = False,
     verbose: _p.Verbose = False,

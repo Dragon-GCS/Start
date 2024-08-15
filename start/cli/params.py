@@ -4,23 +4,22 @@ from typer import Argument, Option
 
 Dependency = Annotated[
     str,
-    Argument(
+    Option(
+        "-d",
+        "--dependency",
         help="Dependency file name. If given a toml file, start will parse "
         "'project.dependencies', else start will parse as requirements.txt. "
         "If toml file not exists, it will be created. "
-        "If not given, start will find 'pyproject.toml' and 'requirements.txt'"
+        "If not given, start will find 'pyproject.toml' and 'requirements.txt'",
     ),
 ]
-Dev = Annotated[bool, Option(False, "-D", "--dev", help="Add packages as development dependency")]
+Dev = Annotated[bool, Option("-D", "--dev", help="Add packages as development dependency")]
 EnvName = Annotated[str, Argument(help="Name of the virtual environment", show_default=False)]
 Force = Annotated[
     bool,
     Option("-f", "--force", help="Remove the existing virtual environment if it exists"),
 ]
-Packages = Annotated[
-    list[str],
-    Option("-p", "--packages", help="Packages to install or display", show_default=False),
-]
+Packages = Annotated[list[str], Argument(help="Packages to install or display", show_default=False)]
 ProjectName = Annotated[str, Argument(help="Name of the project", show_default=False)]
 Require = Annotated[
     str, Option("-r", "--require", help="Dependency file name. Toml file or plain text file")
@@ -35,7 +34,7 @@ Template = Annotated[
     ),
 ]
 Tree = Annotated[
-    bool, Option(False, "-t", "--tree", help="Display installed packages in a tree structure")
+    bool, Option("-t", "--tree", help="Display installed packages in a tree structure")
 ]
 VName = Annotated[str, Option("-n", "--vname", help="Name of the virtual environment")]
 Verbose = Annotated[bool, Option("-v", "--verbose", help="Display install details")]

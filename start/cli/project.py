@@ -13,7 +13,7 @@ from start.logger import Error, Info, Success
 def new(
     ctx: Context,
     project_name: _p.ProjectName,
-    packages: _p.Packages = [],
+    packages: _p.Packages,
     require: _p.Require = "",
     vname: _p.VName = ".venv",
     force: _p.Force = False,
@@ -50,7 +50,7 @@ def new(
 
 def init(
     ctx: Context,
-    packages: _p.Packages = [],
+    packages: _p.Packages,
     require: _p.Require = "",
     vname: _p.VName = ".venv",
     force: _p.Force = False,
