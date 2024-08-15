@@ -2,11 +2,11 @@ import os
 import shutil
 import subprocess
 import unittest
-from test.utils import capture_output
 
-from start import Start
+# from start import Start
 from start.logger import Info, Warn
-from start.manager import display_activate_cmd, try_git_init
+from start.utils import display_activate_cmd, try_git_init
+from tests.utils import capture_output
 
 
 class TestStart(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestStart(unittest.TestCase):
         self.env_dir = ".venv"
         self.need_clean = False
         if not os.path.isdir(".venv"):
-            Start().init(vname=self.env_dir)
+            # Start().init(vname=self.env_dir)
             self.need_clean = True
 
     def tearDown(self) -> None:
