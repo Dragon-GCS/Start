@@ -1,9 +1,6 @@
-# Start
-
-> Full documentation visit [document](https://dragonz.us.kg/Start/).
+# Welcome to Start
 
 A python package manager based on pip and venv, use `pyproject.toml` instead of `requirements.txt`
-
 
 ## install
 
@@ -13,7 +10,7 @@ Install from pypi
 >>> pip install start-manager
 ```
 
-Install from source
+Install from github
 
 ```shell
 >>> pip install start@git+https://github.com/Dragon-GCS/Start

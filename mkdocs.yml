@@ -1,0 +1,11 @@
+site_name: Start
+
+repo_url: https://github.com/Dragon-GCS/Start
+edit_uri: edit/main/docs
+
+nav:
+  - Home: index.md
+  - Reference: reference.md
+
+theme:
+  name: material
