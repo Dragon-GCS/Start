@@ -4,6 +4,7 @@
 
 dist/
 build/
+site/
 *.egg-info/
 
 **test**
