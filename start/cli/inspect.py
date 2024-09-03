@@ -18,18 +18,18 @@ def show(packages: _p.Packages):
         Error("\n".join(pip.stderr))
 
 
-def list_packages(tree: _p.Tree, dev: _p.Dev = False, dependency: _p.Dependency = ""):
+def list_packages(tree: _p.Tree, group: _p.Group = "", dependency: _p.Dependency = ""):
     """Display all installed packages."""
 
     pip = PipManager(DependencyManager.find_executable())
 
     status = ""
-    if dependency or dev:
+    if dependency or group:
         if not (config_path := DependencyManager.ensure_path(dependency)):
             Error(f"Dependency file {dependency} not found")
             raise Exit(1)
         status = "(Dependencies)" if dependency else "(Dev-Dependencies)"
-        packages = DependencyManager.load_dependencies(config_path, dev=dev, neat=tree)
+        packages = DependencyManager.load_dependencies(config_path, group=group, neat=tree)
     else:
         packages = pip.execute(["list"]).parse_list_output()
 

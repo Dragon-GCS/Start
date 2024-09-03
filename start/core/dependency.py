@@ -41,7 +41,7 @@ class DependencyManager:
 
     @classmethod
     def load_dependencies(
-        cls, config_path: Path | str, dev: bool = False, neat: bool = False
+        cls, config_path: Path | str, group: str = "", neat: bool = False
     ) -> List[str]:
         """Try to load dependency list from the config path.
 
@@ -57,8 +57,8 @@ class DependencyManager:
                 config = rtoml.load(f)
                 cls.ensure_config(config)
                 packages = config["project"]["dependencies"]
-                if dev:
-                    packages = config["project"]["optional-dependencies"]["dev"]
+                if group:
+                    packages = config["project"]["optional-dependencies"][group]
         elif config_path.suffix == ".txt":
             with open(config_path, encoding="utf8") as f:
                 packages = [
@@ -79,7 +79,7 @@ class DependencyManager:
         method: Literal["add", "remove"],
         packages: Iterable[str],
         file: str,
-        dev: bool = False,
+        group: str = "",
     ):
         """Change the dependencies in specified file(Only support toml file).
 
@@ -99,8 +99,8 @@ class DependencyManager:
 
         dependencies: list = (
             config["project"]["dependencies"]
-            if not dev
-            else config["project"]["optional-dependencies"]["dev"]
+            if not group
+            else config["project"]["optional-dependencies"][group]
         )
 
         modified = False

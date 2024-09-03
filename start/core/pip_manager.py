@@ -2,7 +2,7 @@ import contextlib
 import os
 import time
 from io import TextIOWrapper
-from subprocess import PIPE, CalledProcessError, CompletedProcess, run
+from subprocess import CalledProcessError, CompletedProcess, run
 from tempfile import TemporaryFile
 from threading import Thread
 from typing import Dict, Generator, List, Tuple

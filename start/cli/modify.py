@@ -11,7 +11,7 @@ from start.logger import Warn
 def _modify(
     *packages: str,
     method: Literal["add", "remove"],
-    dev: bool = False,
+    group: str = "",
     dependency: str = "pyproject.toml",
     verbose: bool = False,
     pip_args: list[str] = [],
@@ -24,28 +24,33 @@ def _modify(
     result = operate(*packages, pip_args=pip_args)
     if result:
         DependencyManager.modify_dependencies(
-            method=method, packages=result, file=dependency, dev=dev
+            method=method, packages=result, file=dependency, group=group
         )
 
 
 def add(
     ctx: Context,
     packages: _p.Packages,
-    dev: _p.Dev = False,
+    group: _p.Group = "",
     dependency: _p.Dependency = "pyproject.toml",
     verbose: _p.Verbose = False,
 ):
     """Install packages and add to the dependency file."""
 
     _modify(
-        *packages, method="add", dev=dev, dependency=dependency, verbose=verbose, pip_args=ctx.args
+        *packages,
+        method="add",
+        group=group,
+        dependency=dependency,
+        verbose=verbose,
+        pip_args=ctx.args,
     )
 
 
 def remove(
     ctx: Context,
     packages: _p.Packages,
-    dev: _p.Dev = False,
+    group: _p.Group = "",
     dependency: _p.Dependency = "pyproject.toml",
     verbose: _p.Verbose = False,
 ):
@@ -54,7 +59,7 @@ def remove(
     _modify(
         *packages,
         method="remove",
-        dev=dev,
+        group=group,
         dependency=dependency,
         verbose=verbose,
         pip_args=ctx.args,
