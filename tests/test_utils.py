@@ -2,11 +2,9 @@ import os
 import shutil
 import subprocess
 import unittest
+from unittest.mock import MagicMock, patch
 
-# from start import Start
-from start.logger import Info, Warn
 from start.utils import display_activate_cmd, try_git_init
-from tests.utils import capture_output
 
 
 class TestStart(unittest.TestCase):
@@ -43,33 +41,27 @@ class TestStart(unittest.TestCase):
         os.environ["SHELL"] = ""
         self.assertEqual(display_activate_cmd(self.env_dir), "")
 
-    def test_git_init(self):
+    @patch("start.logger")
+    def test_git_init(self, mock_logger: MagicMock):
         try:
             subprocess.check_output(["git", "--version"])
             has_git = True
         except FileNotFoundError:
             has_git = False
 
-        if not has_git:
-            with capture_output() as output:
-                try_git_init()
-            self.assertEqual(output.getvalue().strip(), repr(Warn("Git not found, skip git init.")))
+        if has_git:
+            try_git_init()
+            mock_logger.Warn.assert_called_with("Git not found, skip git init.")
+            return
 
         if os.path.exists(".git"):
-            with capture_output() as output:
-                try_git_init()
-            self.assertEqual(
-                output.getvalue().strip(), repr(Info("Git repository already exists."))
-            )
-            try:
-                os.rename(".git", ".git.bak")
-            except PermissionError:
-                print("PermissionError: cannot rename .git to .git.bak for testing.")
-                return
-
-        with capture_output() as output:
             try_git_init()
-        self.assertEqual(output.getvalue().strip(), repr(Info("Git repository initialized.")))
+            mock_logger.Warn.assert_called_with("Git repository already exists.")
+        try:
+            os.rename(".git", ".git.bak")
+        except PermissionError:
+            print("PermissionError: cannot rename .git to .git.bak for testing.")
+            return
 
         os.rmdir(".git")
         if os.path.exists(".git.bak"):

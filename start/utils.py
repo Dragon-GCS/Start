@@ -26,7 +26,7 @@ def neat_package_name(name: str) -> str:
     return name
 
 
-def display_activate_cmd(env_dir: Path, prompt: bool = True):
+def display_activate_cmd(env_dir: Path | str, prompt: bool = True):
     """Display the activate command for the virtual environment.
 
     Args:
@@ -43,16 +43,12 @@ def display_activate_cmd(env_dir: Path, prompt: bool = True):
         "tcsh": "activate.csh",
         "Powershell": "Activate.ps1",
     }
-    if os.name == "nt":
-        # Only support powershell on windows
-        # Cmd has a conflict with start command
-        bin_path = env_dir / "Scripts" / active_scripts["Powershell"]
-    elif shell := Path(os.getenv("SHELL", "")).name:
-        bin_path = env_dir / "bin" / active_scripts[shell]
-    else:
+    script_dir = Path(env_dir, Path(sysconfig.get_path("scripts")).name)
+    shell = "Powershell" if os.name == "nt" else Path(os.getenv("SHELL", "")).name
+    if not shell:
         Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
         return ""
-
+    bin_path = script_dir / active_scripts[shell]
     active_cmd = os.path.abspath(bin_path)
     if not os.access(bin_path, os.X_OK):
         active_cmd = "source " + active_cmd

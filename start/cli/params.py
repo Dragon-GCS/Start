@@ -13,7 +13,7 @@ Dependency = Annotated[
         "If not given, start will find 'pyproject.toml' and 'requirements.txt'",
     ),
 ]
-Group = Annotated[str, Option("-g", "--group", help="Install specified group of dependencies")]
+Group = Annotated[str, Option("-g", "--group", help="Specify group of dependencies to operate")]
 EnvName = Annotated[str, Argument(help="Name of the virtual environment", show_default=False)]
 Force = Annotated[
     bool,
