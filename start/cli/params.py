@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from typer import Argument, Option
 
@@ -19,7 +19,9 @@ Force = Annotated[
     bool,
     Option("-f", "--force", help="Remove the existing virtual environment if it exists"),
 ]
-Packages = Annotated[list[str], Argument(help="Packages to install or display", show_default=False)]
+Packages = Annotated[
+    Optional[list[str]], Argument(help="Packages to install or display", show_default=False)
+]
 ProjectName = Annotated[str, Argument(help="Name of the project", show_default=False)]
 Require = Annotated[
     str, Option("-r", "--require", help="Dependency file name. Toml file or plain text file")

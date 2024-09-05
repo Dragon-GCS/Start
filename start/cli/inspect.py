@@ -6,6 +6,7 @@ from start.cli import params as _p
 from start.core.dependency import DependencyManager
 from start.core.pip_manager import PipManager
 from start.logger import Detail, Error, Info, Success, Warn
+from start.utils import ensure_path
 
 
 def show(packages: _p.Packages):
@@ -25,11 +26,12 @@ def list_packages(tree: _p.Tree, group: _p.Group = "", dependency: _p.Dependency
 
     status = ""
     if dependency or group:
-        if not (config_path := DependencyManager.ensure_path(dependency)):
+        if not (config_path := ensure_path(dependency)):
             Error(f"Dependency file {dependency} not found")
             raise Exit(1)
         status = "(Dependencies)" if dependency else "(Dev-Dependencies)"
-        packages = DependencyManager.load_dependencies(config_path, group=group, neat=tree)
+        dm = DependencyManager(config_path)
+        packages = [dep.name for dep in dm.packages(group)]
     else:
         packages = pip.execute(["list"]).parse_list_output()
 

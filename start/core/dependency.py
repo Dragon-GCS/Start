@@ -1,166 +1,156 @@
-import os
-import sys
+import re
 from pathlib import Path
-from typing import Iterable, List, Literal, Optional
+from typing import Any, Iterable, List, Literal
 
 import rtoml
+import typer
 
-from start.core.config import DEFAULT_ENV
-from start.logger import Error, Info, Success
-from start.utils import display_activate_cmd, neat_package_name
+from start.core.config import DEFAULT_TOML_FILE_CONFIG
+from start.logger import Error
+from start.utils import update_config_with_default
+
+
+class Dependency:
+    """Parse the dependency string to name, extras, version and markers."""
+
+    __slots__ = ("_raw", "name", "extra", "version", "markers")
+    pattern = re.compile(
+        r"""
+    ^(?P<name>[\w\d_\-]+)           # package name
+    (\[(?P<extras>[\w\d_,\s]+)\])?  # extras option
+    (\s*(?P<version_spec>[=><!~]+\s*[\w\d.*]+(,\s*([=><!~]+)\s*[\w\d.*]+)*))?   # version
+    (\s*;\s*(?P<markers>.*))?      # markers
+    $
+    """,
+        re.VERBOSE,
+    )
+
+    def __init__(self, dep: str):
+        self._raw = dep
+        self.name = self.extra = self.version = self.markers = ""
+        if not (match := self.pattern.match(dep)):
+            return
+        self.name = match.group("name").replace("_", "-")
+        self.extra = match.group("extras") or ""
+        self.version = match.group("version_spec") or ""
+        self.markers = match.group("markers") or ""
+
+    def __repr__(self):
+        return self._raw
+
+    def __eq__(self, other: Any):
+        if isinstance(other, Dependency):
+            return self.name == other.name
+        elif isinstance(other, str):
+            return str(self) == other
+        return False
+
+    def __hash__(self) -> int:
+        return hash(self.name)
 
 
 class DependencyManager:
-    """Package manage related functions"""
-
-    @classmethod
-    def ensure_config(cls, config: dict):
-        """Ensure the config contains tool.start.dependencies and
-        tool.start.dev-dependencies.
-
-        Args:
-            config: Config dict, parse from toml file
-        """
-        if not config.get("project"):
-            config["project"] = {
-                "dependencies": [],
-                "optional-dependencies": {"dev": []},
-            }
-        if "dependencies" not in config["project"]:
-            config["project"]["dependencies"] = []
-        if "optional-dependencies" not in config["project"]:
-            config["project"]["optional-dependencies"] = {"dev": []}
-        if not isinstance(config["project"]["dependencies"], list):
-            Error("project.dependencies is not a list, start fix it.")
-            config["project"]["dependencies_bak"] = config["project"]["dependencies"]
-            config["project"]["dependencies"] = []
-        if not isinstance(config["project"]["optional-dependencies"].get("dev"), list):
-            Error("project.optional-dependencies.dev is not a list, start fix it.")
-            opt_deps = config["project"]["optional-dependencies"]
-            opt_deps["dev_bak"], opt_deps["dev"] = opt_deps["dev"], []
-
-    @classmethod
-    def load_dependencies(
-        cls, config_path: Path | str, group: str = "", neat: bool = False
-    ) -> List[str]:
-        """Try to load dependency list from the config path.
-
-        Args:
-            config_path: Path to the config file
-            dev: Load dev-dependencies if True, otherwise load dependencies
-            neat: remove '[]' in package name that was optional installed
-        """
-        if isinstance(config_path, str):
-            config_path = Path(config_path)
-        if config_path.suffix == ".toml":
-            with open(config_path, encoding="utf8") as f:
-                config = rtoml.load(f)
-                cls.ensure_config(config)
-                packages = config["project"]["dependencies"]
-                if group:
-                    packages = config["project"]["optional-dependencies"][group]
-        elif config_path.suffix == ".txt":
-            with open(config_path, encoding="utf8") as f:
-                packages = [
+    def __init__(self, config_file: str | Path):
+        self.config_file = Path(config_file)
+        self.is_toml_file = self.config_file.suffix == ".toml"
+        self.config = DEFAULT_TOML_FILE_CONFIG
+        if self.is_toml_file:
+            self.config = update_config_with_default(rtoml.load(self.config_file), self.config)
+        elif self.config_file.suffix == ".txt":
+            with self.config_file.open(encoding="utf-8") as f:
+                self.config["project"]["dependencies"] = [
                     line for _line in f if (line := _line.strip()) and line[0] not in "#-/!"
                 ]
         else:
-            Error(f"Not found dependencies due to unsupported file format: {config_path}")
-            packages = []
+            Error(f"Not found dependencies due to unsupported file format: {config_file}")
+            raise typer.Exit(1)
 
-        if neat:
-            packages = [neat_package_name(p) for p in packages]
+        if not isinstance(self.config["project"]["dependencies"], list):
+            Error("project.dependencies is not a list, start fix it.")
+            self.config["project"]["dependencies_bak"] = self.config["project"]["dependencies"]
+            self.config["project"]["dependencies"] = []
+        self.project = self.config["project"]
+        self._changed = False
 
-        return packages
+    def packages(self, group: str = "") -> List[Dependency]:
+        """
+        Retrieve a list of dependencies, if group is specified, retrieve the dependencies in that group.
+        Args:
+            group (str): The group of dependencies to retrieve. Defaults to an empty string.
+        Returns:
+            List[Dependency]: A list of Dependency objects representing the retrieved dependencies.
+        """
 
-    @classmethod
+        packages = (
+            self.project["dependencies"]
+            if not group
+            else self.project["optional-dependencies"].get(group, [])
+        )
+        return list(map(Dependency, packages))
+
     def modify_dependencies(
-        cls,
+        self,
         method: Literal["add", "remove"],
         packages: Iterable[str],
-        file: str,
         group: str = "",
+        save: bool = False,
     ):
-        """Change the dependencies in specified file(Only support toml file).
-
-        Args:
-            method: "add" or "remove"
-            packages: Packages to add or remove
-            file: Config file name
-            dev: Add packages as development dependency
         """
-        if not (file_path := cls.ensure_path(file)):
-            Error("No dependency file found")
+        Modifies the dependencies of the project.
+        Args:
+            method (Literal["add", "remove"]): The method to use for modifying the dependencies.
+                Must be either "add" or "remove".
+            packages (Iterable[str]): The packages to add or remove from the dependencies.
+            group (str): The group to modify. Defaults to "".
+            save (bool): Whether to save the changes to the configuration file. Defaults to True.
+        """
+        if group and not self.is_toml_file:
+            Error("Optional dependencies are only supported in TOML format.")
+            raise typer.Exit(1)
+
+        if not group:
+            packages_ref = self.project["dependencies"]
+        elif group not in self.project["optional-dependencies"] and method == "remove":
             return
+        else:
+            packages_ref = self.project["optional-dependencies"][group]
+        # convert package to pure name for lookup
+        dependencies = {Dependency(p): p for p in packages_ref}
 
-        with open(file_path, encoding="utf8") as f:
-            config = rtoml.load(f)
-            cls.ensure_config(config)
-
-        dependencies: list = (
-            config["project"]["dependencies"]
-            if not group
-            else config["project"]["optional-dependencies"][group]
-        )
-
-        modified = False
+        _origin_package_num = len(packages_ref)
         if method == "add":
-            for package in packages:
-                if package not in dependencies:
-                    dependencies.append(package)
-                    modified = True
-            dependencies.sort()
+            packages_ref.extend(
+                package for package in packages if Dependency(package) not in dependencies
+            )
         elif method == "remove":
-            neat_dependencies = [neat_package_name(p) for p in dependencies]
             for package in packages:
-                if package in neat_dependencies:
-                    dependencies.pop(neat_dependencies.index(package))
-                    neat_dependencies.remove(package)
-                    modified = True
-        if not modified:
+                if (dep := Dependency(package)) in dependencies:
+                    packages_ref.remove(dependencies[dep])
+        self._changed = _origin_package_num != len(packages_ref)
+        packages_ref.sort()
+        if save and self._changed:
+            self.save()
+
+    def add(self, packages: Iterable[str], group: str = "", save: bool = False):
+        self.modify_dependencies("add", packages, group)
+
+    def remove(self, packages: Iterable[str], group: str = "", save: bool = False):
+        self.modify_dependencies("remove", packages, group)
+
+    def save(self):
+        """
+        Saves the configuration to a file.
+        If the configuration has not been changed, the method returns without saving.
+        If the configuration is in TOML format, it is saved using the `rtoml.dump` function.
+        If the configuration is not in TOML format, the dependencies are written to the file.
+        After saving, the `_changed` flag is set to False.
+        """
+
+        if not self._changed:
             return
-        with open(file_path, "w", encoding="utf8") as f:
-            rtoml.dump(config, f, pretty=True)
-        Success(f"Updated dependency file: {file_path}")
-
-    @classmethod
-    def ensure_path(cls, basename: str, parent: int = 2) -> Optional[Path]:
-        """Find the file or folder from current path to parent directories.
-
-        Args:
-            basename: File or folder name
-            parent: Parent directory depth
-        Returns:
-            the absolute path of the file or folder if found, otherwise None
-        """
-        path = Path.cwd()
-        for _ in range(parent):
-            executable = path / basename
-            if executable.exists():
-                return executable
-            path = path.parent
-        return None
-
-    @classmethod
-    def find_executable(cls) -> str:
-        """Find available executable in the system. If virtual environment
-        was activated, return the interpreter path which is in VIRTUAL_ENV
-        bin directory, else start will find .venv, .env as env_path. If not
-        find any, return sys.executable.
-
-        Returns:
-            The path of available interpreter
-        """
-        base_interpreter = Path(sys.executable).name
-        bin_dir = "Scripts" if sys.platform.startswith("win") else "bin"
-        if env_path := os.getenv("VIRTUAL_ENV"):
-            return os.path.join(env_path, bin_dir, base_interpreter)
-        for path in DEFAULT_ENV:
-            if env_path := cls.ensure_path(path):
-                Info(
-                    f"Found virtual environment '{env_path}' but was not "
-                    "activated, packages was installed by this interpreter"
-                )
-                display_activate_cmd(env_path)
-                return os.path.join(env_path, bin_dir, base_interpreter)
-        return base_interpreter
+        if self.is_toml_file:
+            rtoml.dump(self.config, self.config_file, pretty=True)
+        else:
+            with self.config_file.open("w", encoding="utf-8") as f:
+                f.write("\n".join(self.project["dependencies"]))
+        self._changed = False

@@ -23,8 +23,8 @@ def _modify(
     operate = pip.install if method == "add" else pip.uninstall
     result = operate(*packages, pip_args=pip_args)
     if result:
-        DependencyManager.modify_dependencies(
-            method=method, packages=result, file=dependency, group=group
+        DependencyManager(dependency).modify_dependencies(
+            method=method, packages=result, group=group, save=True
         )
 
 
@@ -38,7 +38,7 @@ def add(
     """Install packages and add to the dependency file."""
 
     _modify(
-        *packages,
+        *packages or [],
         method="add",
         group=group,
         dependency=dependency,
@@ -57,7 +57,7 @@ def remove(
     """Uninstall packages and remove from the dependency file."""
 
     _modify(
-        *packages,
+        *packages or [],
         method="remove",
         group=group,
         dependency=dependency,
