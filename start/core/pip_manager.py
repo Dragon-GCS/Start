@@ -7,8 +7,9 @@ from tempfile import TemporaryFile
 from threading import Thread
 from typing import Dict, Generator, List, Tuple
 
+from start.core.dependency import Dependency
 from start.logger import Error, Info, Success, Warn
-from start.utils import neat_package_name
+from start.utils import find_executable
 
 # subprocess use gbk in PIPE decoding and can't to change, due to
 # UnicodeDecodeError when some package's meta data contains invalid characters.
@@ -87,7 +88,10 @@ class PipManager:
     stderr: List[str]
     return_code: int
 
-    def __init__(self, executable: str, verbose: bool = False):
+    def __init__(self, executable: str | None = None, verbose: bool = False):
+        if not executable:
+            executable = find_executable()
+
         self.cmd = [executable, "-m", "pip"]
         self.execu = executable
         self.verbose = verbose
@@ -121,9 +125,9 @@ class PipManager:
         self.execute(["install", *packages, *pip_args]).show_output()
 
         installed_packages = set(
-            [package for line in self.stdout for package in self.parse_output(line)]
+            package for line in self.stdout for package in self.parse_output(line)
         )
-        return [package for package in packages if neat_package_name(package) in installed_packages]
+        return [package for package in packages if Dependency(package).name in installed_packages]
 
     def uninstall(self, *packages: str, pip_args: list[str]) -> List[str]:
         """Uninstall packages.
@@ -191,11 +195,10 @@ class PipManager:
         packages_require, name = {}, ""
         for line in self.stdout:
             if line.startswith("Name"):
-                name = line.lstrip("Name:").strip()
-                name = neat_package_name(name)
+                name = Dependency(line.lstrip("Name:").strip()).name
             if line.startswith("Requires") and name:
                 requires = line.lstrip("Requires:").strip().split(", ")
-                packages_require[name] = [neat_package_name(r) for r in requires if r]
+                packages_require[name] = [Dependency(r).name for r in requires if r]
 
         # parse require tree
         requires_set = set(packages_require.keys())

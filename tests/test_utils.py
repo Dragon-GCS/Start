@@ -12,7 +12,6 @@ class TestStart(unittest.TestCase):
         self.env_dir = ".venv"
         self.need_clean = False
         if not os.path.isdir(".venv"):
-            # Start().init(vname=self.env_dir)
             self.need_clean = True
 
     def tearDown(self) -> None:

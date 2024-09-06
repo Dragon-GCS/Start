@@ -11,8 +11,8 @@ from start.utils import ensure_path
 
 def show(packages: _p.Packages):
     """Show information about installed packages."""
-    pip = PipManager(DependencyManager.find_executable())
-    pip.execute(["show", *packages])
+    pip = PipManager()
+    pip.execute(["show", *(packages or [])])
     if pip.stdout:
         Detail("\n".join(pip.stdout))
     if pip.stderr:
@@ -22,7 +22,7 @@ def show(packages: _p.Packages):
 def list_packages(tree: _p.Tree, group: _p.Group = "", dependency: _p.Dependency = ""):
     """Display all installed packages."""
 
-    pip = PipManager(DependencyManager.find_executable())
+    pip = PipManager()
 
     status = ""
     if dependency or group:

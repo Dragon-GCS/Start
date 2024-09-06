@@ -19,7 +19,7 @@ def _modify(
     if not dependency.endswith(".toml"):
         Warn("Only support toml file now")
         raise Exit(1)
-    pip = PipManager(DependencyManager.find_executable(), verbose=verbose)
+    pip = PipManager(verbose=verbose)
     operate = pip.install if method == "add" else pip.uninstall
     result = operate(*packages, pip_args=pip_args)
     if result:
