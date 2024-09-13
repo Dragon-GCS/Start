@@ -1,24 +1,17 @@
 import os
-import sys
 from pathlib import Path
 
-from typer import Context
+from typer import Context, Exit
 
 from start.cli import params as _p
 from start.core.config import DEFAULT_ENV
 from start.core.env_builder import ExtEnvBuilder
 from start.logger import Error, Info, Success
-from start.utils import display_activate_cmd
+from start.utils import display_activate_cmd, is_env_dir
 
 # load data directory, read from START_DATA_DIR or $HOME/.start
 _data_dir = Path(os.getenv("START_DATA_DIR", "~/.start")).expanduser().absolute()
 _data_dir.mkdir(exist_ok=True, parents=True)
-
-
-def is_env_dir(path: Path):
-    """Check path is a virtual environment directory."""
-    bin_dir_name = "Scripts" if sys.platform.startswith("win") else "bin"
-    return (path / bin_dir_name / "activate").is_file()
 
 
 def activate(env_name: _p.EnvName):
@@ -50,8 +43,9 @@ def activate(env_name: _p.EnvName):
             if is_env_dir(env_path):
                 active_cmd = display_activate_cmd(env_path, prompt=False)
                 print(active_cmd)
-                return
+                raise Exit(0)
     Error(f"Virtual environment {env_name} not found.")
+    raise Exit(1)
 
 
 def create(
@@ -67,7 +61,7 @@ def create(
 ):
     """Create a virtual environment and install specified packages."""
 
-    env_path = os.path.join(_data_dir, env_name)
+    env_path = _data_dir / env_name
     Info(f"Creating virtual environment: {env_name}({env_path})")
     ExtEnvBuilder(
         packages=packages,
@@ -78,7 +72,7 @@ def create(
         upgrade_core=not without_upgrade,
         system_site_packages=not without_system_packages,
         init_repo=False,
-        pip_args=ctx.args,
+        pip_args=ctx.meta["pip_args"],
     ).create(env_path)
     Success("Finish creating virtual environment.")
 

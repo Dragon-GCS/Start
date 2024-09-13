@@ -1,32 +1,32 @@
 import os
 import shutil
 import subprocess
+import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
-from start.utils import display_activate_cmd, try_git_init
+from start.utils import display_activate_cmd, is_env_dir, try_git_init
 
 
-class TestStart(unittest.TestCase):
-    def setUp(self) -> None:
-        self.env_dir = ".venv"
-        self.need_clean = False
-        if not os.path.isdir(".venv"):
-            self.need_clean = True
+class TestUtils(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.env_dir = tempfile.mkdtemp()
+        subprocess.check_call(["python", "-m", "venv", f"{cls.env_dir}", "--without-pip"])
 
-    def tearDown(self) -> None:
-        if self.need_clean:
-            shutil.rmtree(self.env_dir)
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if os.path.exists(cls.env_dir):
+            shutil.rmtree(cls.env_dir)
 
     def test_activate_cmd(self):
-        cwd = os.getcwd()
         if os.name == "nt":
             self.assertEqual(
                 display_activate_cmd(self.env_dir),
-                os.path.join(cwd, ".venv\\Scripts\\Activate.ps1"),
+                os.path.join(self.env_dir, "Scripts\\Activate.ps1"),
             )
             os.name = "unix"  # mock unix
-        base_path = os.path.join(cwd, ".venv", "bin", "activate")
+        base_path = os.path.join(self.env_dir, "bin", "activate")
         if not os.access(base_path, os.X_OK):
             base_path = "source " + base_path
         os.environ["SHELL"] = "/bin/bash"
@@ -40,28 +40,32 @@ class TestStart(unittest.TestCase):
         os.environ["SHELL"] = ""
         self.assertEqual(display_activate_cmd(self.env_dir), "")
 
-    @patch("start.logger")
-    def test_git_init(self, mock_logger: MagicMock):
+    @patch("start.utils.Warn")
+    @patch("start.utils.Info")
+    def test_git_init(self, mock_info: MagicMock, mock_warn: MagicMock):
         try:
             subprocess.check_output(["git", "--version"])
             has_git = True
         except FileNotFoundError:
             has_git = False
 
-        if has_git:
-            try_git_init()
-            mock_logger.Warn.assert_called_with("Git not found, skip git init.")
+        if not has_git:
+            mock_warn.assert_called_with("Git not found, skip git init.")
             return
+        git_exists = os.path.exists(".git")
+        try_git_init()
 
-        if os.path.exists(".git"):
-            try_git_init()
-            mock_logger.Warn.assert_called_with("Git repository already exists.")
-        try:
-            os.rename(".git", ".git.bak")
-        except PermissionError:
-            print("PermissionError: cannot rename .git to .git.bak for testing.")
-            return
+        if git_exists:
+            mock_info.assert_called_with("Git repository already exists.")
+        else:
+            mock_info.assert_called_with("Git repository initialized.")
 
-        os.rmdir(".git")
-        if os.path.exists(".git.bak"):
-            os.rename(".git.bak", ".git")
+        if not git_exists:
+            os.rmdir(".git")
+
+    def test_is_env_dir(self):
+        # Test when the path is a virtual environment directory
+        self.assertTrue(is_env_dir(self.env_dir))
+
+        # Test when the path does not exist
+        self.assertFalse(is_env_dir("/path/to/nonexistent"))

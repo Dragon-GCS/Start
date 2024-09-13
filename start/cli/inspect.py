@@ -25,11 +25,11 @@ def list_packages(tree: _p.Tree = False, group: _p.Group = "", dependency: _p.De
     pip = PipManager()
 
     status = ""
-    if dependency or group:
+    if dependency:
         if not (config_path := ensure_path(dependency)):
             Error(f"Dependency file {dependency} not found")
             raise Exit(1)
-        status = "(Dependencies)" if dependency else "(Dev-Dependencies)"
+        status = f"({group}-Dependencies)" if group else "(Dependencies)"
         dm = DependencyManager(config_path)
         packages = [dep.name for dep in dm.packages(group)]
     else:
@@ -37,12 +37,12 @@ def list_packages(tree: _p.Tree = False, group: _p.Group = "", dependency: _p.De
 
     if not packages:
         Warn("No packages found")
-        raise Exit()
+        raise Exit(1)
 
     if not tree:
         Info(f"Installed{status} packages:")
         Detail("\n".join("- " + package for package in packages))
-        raise Exit()
+        raise Exit(0)
 
     analyzed_packages = pip.analyze_packages_require(*packages)
     Success("Analysis for installed packages:")

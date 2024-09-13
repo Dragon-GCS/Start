@@ -8,6 +8,8 @@ from typing import Optional
 from start.core.config import DEFAULT_ENV
 from start.logger import Error, Info, Prompt, Warn
 
+_script_dir_name = Path(sysconfig.get_path("scripts")).name
+
 
 def display_activate_cmd(env_dir: Path | str, prompt: bool = True):
     """Display the activate command for the virtual environment.
@@ -26,7 +28,7 @@ def display_activate_cmd(env_dir: Path | str, prompt: bool = True):
         "tcsh": "activate.csh",
         "Powershell": "Activate.ps1",
     }
-    script_dir = Path(env_dir, Path(sysconfig.get_path("scripts")).name)
+    script_dir = Path(env_dir, _script_dir_name)
     shell = "Powershell" if os.name == "nt" else Path(os.getenv("SHELL", "")).name
     if not shell:
         Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
@@ -111,3 +113,8 @@ def find_executable() -> str:
             display_activate_cmd(env_path)
             return os.path.join(env_path, bin_dir, base_interpreter)
     return base_interpreter
+
+
+def is_env_dir(path: Path | str):
+    """Check path is a virtual environment directory."""
+    return Path(path, _script_dir_name, "activate").is_file()

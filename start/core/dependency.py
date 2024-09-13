@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Iterable, List, Literal
 
 import rtoml
-import typer
+from typer import Exit
 
 from start.core.config import DEFAULT_TOML_FILE_CONFIG
 from start.logger import Error
@@ -63,7 +63,7 @@ class DependencyManager:
                 ]
         else:
             Error(f"Unsupported file format: {config_file}")
-            raise typer.Exit(1)
+            raise Exit(1)
 
         if not isinstance(self.config["project"]["dependencies"], list):
             Error("project.dependencies is not a list, start fix it.")
@@ -106,7 +106,7 @@ class DependencyManager:
         """
         if group and not self.is_toml_file:
             Error("Optional dependencies are only supported in TOML format.")
-            raise typer.Exit(1)
+            raise Exit(1)
 
         if not group:
             packages_ref = self.project["dependencies"]
