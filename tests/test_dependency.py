@@ -3,6 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import typer
+
 from start.core.config import DEFAULT_TOML_FILE_CONFIG
 from start.core.dependency import Dependency, DependencyManager
 
@@ -70,15 +72,13 @@ class TestDependency(unittest.TestCase):
         self.assertEqual(dependency_manager.config, DEFAULT_TOML_FILE_CONFIG)
         mock_load.assert_called_once_with(self.config_file)
 
-    @patch("start.core.dependency.typer.Exit")
     @patch("start.core.dependency.Error")
-    def test_init_with_unsupported_file_format(self, mock_error: MagicMock, mock_exit: MagicMock):
+    def test_init_with_unsupported_file_format(self, mock_error: MagicMock):
         config_file = "test.yaml"
-        DependencyManager(config_file)
-        mock_error.assert_called_once_with(
-            f"Not found dependencies due to unsupported file format: {config_file}"
-        )
-        mock_exit.assert_called_once_with(1)
+        with self.assertRaises(typer.Exit) as exc:
+            DependencyManager(config_file)
+        mock_error.assert_called_once_with(f"Unsupported file format: {config_file}")
+        self.assertEqual(exc.exception.exit_code, 1)
 
     def test_modify_dependencies_add(self):
         packages = ["package1 >= 1.0", "package2[extra]"]
@@ -98,7 +98,9 @@ class TestDependency(unittest.TestCase):
     def test_save(self, mock_dump: MagicMock, mock_open: MagicMock):
         self.dependency_manager._changed = True
         self.dependency_manager.save()
-        mock_dump.assert_called_once_with(self.dependency_manager.config, self.config_file)
+        mock_dump.assert_called_once_with(
+            self.dependency_manager.config, self.config_file, pretty=True
+        )
 
         self.dependency_manager.is_toml_file = False
         self.dependency_manager._changed = True

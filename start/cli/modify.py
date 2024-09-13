@@ -1,11 +1,10 @@
 from typing import Literal
 
-from typer import Context, Exit
+from typer import Context
 
 from start.cli import params as _p
 from start.core.dependency import DependencyManager
 from start.core.pip_manager import PipManager
-from start.logger import Warn
 
 
 def _modify(
@@ -16,16 +15,12 @@ def _modify(
     verbose: bool = False,
     pip_args: list[str] = [],
 ):
-    if not dependency.endswith(".toml"):
-        Warn("Only support toml file now")
-        raise Exit(1)
+    dm = DependencyManager(dependency)
     pip = PipManager(verbose=verbose)
     operate = pip.install if method == "add" else pip.uninstall
     result = operate(*packages, pip_args=pip_args)
     if result:
-        DependencyManager(dependency).modify_dependencies(
-            method=method, packages=result, group=group, save=True
-        )
+        dm.modify_dependencies(method=method, packages=result, group=group, save=True)
 
 
 def add(
@@ -43,7 +38,7 @@ def add(
         group=group,
         dependency=dependency,
         verbose=verbose,
-        pip_args=ctx.args,
+        pip_args=ctx.meta["pip_args"],
     )
 
 
@@ -62,5 +57,5 @@ def remove(
         group=group,
         dependency=dependency,
         verbose=verbose,
-        pip_args=ctx.args,
+        pip_args=ctx.meta["pip_args"],
     )

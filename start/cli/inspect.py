@@ -19,7 +19,7 @@ def show(packages: _p.Packages):
         Error("\n".join(pip.stderr))
 
 
-def list_packages(tree: _p.Tree, group: _p.Group = "", dependency: _p.Dependency = ""):
+def list_packages(tree: _p.Tree = False, group: _p.Group = "", dependency: _p.Dependency = ""):
     """Display all installed packages."""
 
     pip = PipManager()

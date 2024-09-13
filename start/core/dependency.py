@@ -62,7 +62,7 @@ class DependencyManager:
                     line for _line in f if (line := _line.strip()) and line[0] not in "#-/!"
                 ]
         else:
-            Error(f"Not found dependencies due to unsupported file format: {config_file}")
+            Error(f"Unsupported file format: {config_file}")
             raise typer.Exit(1)
 
         if not isinstance(self.config["project"]["dependencies"], list):

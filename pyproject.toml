@@ -39,7 +39,10 @@ start = 'start.cli:app'
 
 [project.optional-dependencies]
 dev = ['ruff']
-doc = ['mkdocs', 'mkdocs-material']
+doc = [
+    'mkdocs',
+    'mkdocs-material',
+]
 [tool.ruff]
 line-length = 100
 
