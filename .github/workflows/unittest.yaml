@@ -1,4 +1,4 @@
-name: Publish Python Package
+name: Code Check And Test
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - "pyproject.toml"
 
 jobs:
-  Code Check:
+  CodeCheck:
     runs-on: ubuntu-latest
     if: contains(github.server_url, 'github.com')
     steps:
@@ -24,7 +24,7 @@ jobs:
       run: |
         ruff check
         ruff format --check
-  Code Test:
+  CodeTest:
     runs-on: ubuntu-latest
     if: contains(github.server_url, 'github.com')
     steps:
