@@ -7,10 +7,3 @@ dist/
 build/
 site/
 *.egg-info/
-
-**test**
-*.toml
-
-!/tests
-!/tests/**/*.py
-!pyproject.toml

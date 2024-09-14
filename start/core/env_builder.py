@@ -1,7 +1,6 @@
 import os
 import venv
 from types import SimpleNamespace
-from typing import List
 
 from typer import Exit
 
@@ -30,7 +29,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
 
     def __init__(
         self,
-        packages: List[str] | None,
+        packages: list[str] | None,
         require: str = "",
         force: bool = False,
         verbose: bool = False,

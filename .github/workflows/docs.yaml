@@ -1,4 +1,4 @@
-name: CI
+name: Build Docs
 
 on:
   push:
