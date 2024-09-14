@@ -1,0 +1,41 @@
+name: Code Check And Test
+
+on:
+  push:
+    paths:
+      - "start/**.py"
+      - "pyproject.toml"
+
+jobs:
+  CodeCheck:
+    runs-on: ubuntu-latest
+    if: contains(github.server_url, 'github.com')
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '>=3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .[dev]
+    - name: Code Check
+      run: |
+        ruff check
+        ruff format --check
+  CodeTest:
+    runs-on: ubuntu-latest
+    if: contains(github.server_url, 'github.com')
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '>=3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+    - name: Code Test
+      run: python -m unittest discover -s tests -p "test_*.py"

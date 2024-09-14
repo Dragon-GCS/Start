@@ -1,61 +1,61 @@
 from typing import Literal
 
-from typer import Context, Exit
+from typer import Context
 
 from start.cli import params as _p
 from start.core.dependency import DependencyManager
 from start.core.pip_manager import PipManager
-from start.logger import Warn
 
 
 def _modify(
     *packages: str,
     method: Literal["add", "remove"],
-    dev: bool = False,
+    group: str = "",
     dependency: str = "pyproject.toml",
     verbose: bool = False,
     pip_args: list[str] = [],
 ):
-    if not dependency.endswith(".toml"):
-        Warn("Only support toml file now")
-        raise Exit(1)
-    pip = PipManager(DependencyManager.find_executable(), verbose=verbose)
+    dm = DependencyManager(dependency)
+    pip = PipManager(verbose=verbose)
     operate = pip.install if method == "add" else pip.uninstall
     result = operate(*packages, pip_args=pip_args)
     if result:
-        DependencyManager.modify_dependencies(
-            method=method, packages=result, file=dependency, dev=dev
-        )
+        dm.modify_dependencies(method=method, packages=result, group=group, save=True)
 
 
 def add(
     ctx: Context,
     packages: _p.Packages,
-    dev: _p.Dev = False,
+    group: _p.Group = "",
     dependency: _p.Dependency = "pyproject.toml",
     verbose: _p.Verbose = False,
 ):
     """Install packages and add to the dependency file."""
 
     _modify(
-        *packages, method="add", dev=dev, dependency=dependency, verbose=verbose, pip_args=ctx.args
+        *packages or [],
+        method="add",
+        group=group,
+        dependency=dependency,
+        verbose=verbose,
+        pip_args=ctx.meta["pip_args"],
     )
 
 
 def remove(
     ctx: Context,
     packages: _p.Packages,
-    dev: _p.Dev = False,
+    group: _p.Group = "",
     dependency: _p.Dependency = "pyproject.toml",
     verbose: _p.Verbose = False,
 ):
     """Uninstall packages and remove from the dependency file."""
 
     _modify(
-        *packages,
+        *packages or [],
         method="remove",
-        dev=dev,
+        group=group,
         dependency=dependency,
         verbose=verbose,
-        pip_args=ctx.args,
+        pip_args=ctx.meta["pip_args"],
     )

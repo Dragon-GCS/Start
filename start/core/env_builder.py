@@ -1,7 +1,6 @@
 import os
 import venv
 from types import SimpleNamespace
-from typing import List
 
 from typer import Exit
 
@@ -30,7 +29,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
 
     def __init__(
         self,
-        packages: List[str],
+        packages: list[str] | None,
         require: str = "",
         force: bool = False,
         verbose: bool = False,
@@ -43,7 +42,8 @@ class ExtEnvBuilder(venv.EnvBuilder):
         super().__init__(clear=force, system_site_packages=system_site_packages, with_pip=with_pip)
         self.packages = packages or []
         if require:
-            self.packages.extend(DependencyManager.load_dependencies(require))
+            dm = DependencyManager(require)
+            self.packages.extend(str(dep) for dep in dm.packages())
         self.upgrade_core = upgrade_core
         self.init_repo = init_repo
         self.verbose = verbose

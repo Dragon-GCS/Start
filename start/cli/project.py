@@ -1,6 +1,6 @@
 from os import path
 
-from typer import Context
+from typer import Context, Exit
 
 from start.cli import params as _p
 from start.core.dependency import DependencyManager
@@ -8,12 +8,13 @@ from start.core.env_builder import ExtEnvBuilder
 from start.core.pip_manager import PipManager
 from start.core.template import Template
 from start.logger import Error, Info, Success
+from start.utils import ensure_path
 
 
 def new(
     ctx: Context,
     project_name: _p.ProjectName,
-    packages: _p.Packages,
+    packages: _p.Packages = None,
     require: _p.Require = "",
     vname: _p.VName = ".venv",
     force: _p.Force = False,
@@ -42,15 +43,13 @@ def new(
     # Create project directory from template
     Template(project_name=project_name, vname=vname).create(template)
     # modify dependencies in pyproject.toml
-    DependencyManager.modify_dependencies(
-        "add", packages or [], path.join(project_name, "pyproject.toml")
-    )
+    DependencyManager(path.join(project_name, "pyproject.toml")).add(packages or [], save=True)
     Success("Finish creating project.")
 
 
 def init(
     ctx: Context,
-    packages: _p.Packages,
+    packages: _p.Packages = None,
     require: _p.Require = "",
     vname: _p.VName = ".venv",
     force: _p.Force = False,
@@ -81,15 +80,11 @@ def install(ctx: Context, require: _p.Require = "", verbose: _p.Verbose = False)
     """Install packages in specified dependency file."""
 
     if require:
-        packages = DependencyManager.load_dependencies(require)
-    elif file := (
-        DependencyManager.ensure_path("pyproject.toml")
-        or DependencyManager.ensure_path("requirements.txt")
-    ):
-        packages = DependencyManager.load_dependencies(file)
+        packages = DependencyManager(require).packages()
+    elif file := (ensure_path("pyproject.toml") or ensure_path("requirements.txt")):
+        packages = DependencyManager(file).packages()
     else:
         Error("No dependency file found")
-        return
-    PipManager(DependencyManager.find_executable(), verbose=verbose).install(
-        *packages, pip_args=ctx.args
-    )
+        raise Exit(1)
+    packages = [str(dep) for dep in packages]
+    PipManager(verbose=verbose).install(*packages, pip_args=ctx.args)

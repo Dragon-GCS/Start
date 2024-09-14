@@ -1,6 +1,20 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
-from typer import Argument, Option
+from typer import Argument, Context, Option
+
+
+def correct_extra_args(ctx: Context, packages: list[str]):
+    """Due to packages cost all the extra args, we need to separate them."""
+    meta = ctx.meta
+    packages = packages or []
+    for i, arg in enumerate(packages):
+        if not arg.startswith("-"):
+            continue
+        # TODO! ctx.args can't store the extra args, so we need to store them in ctx.meta
+        meta.setdefault("pip_args", []).extend(packages[i:])
+        return packages[:i]
+    return packages
+
 
 Dependency = Annotated[
     str,
@@ -13,13 +27,18 @@ Dependency = Annotated[
         "If not given, start will find 'pyproject.toml' and 'requirements.txt'",
     ),
 ]
-Dev = Annotated[bool, Option("-D", "--dev", help="Add packages as development dependency")]
+Group = Annotated[str, Option("-g", "--group", help="Specify group of dependencies to operate")]
 EnvName = Annotated[str, Argument(help="Name of the virtual environment", show_default=False)]
 Force = Annotated[
     bool,
     Option("-f", "--force", help="Remove the existing virtual environment if it exists"),
 ]
-Packages = Annotated[list[str], Argument(help="Packages to install or display", show_default=False)]
+Packages = Annotated[
+    Optional[list[str]],
+    Argument(
+        help="Packages to install or display", show_default=False, callback=correct_extra_args
+    ),
+]
 ProjectName = Annotated[str, Argument(help="Name of the project", show_default=False)]
 Require = Annotated[
     str, Option("-r", "--require", help="Dependency file name. Toml file or plain text file")

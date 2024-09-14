@@ -1,3 +1,5 @@
+import os
+
 from typer import Typer
 
 from start.cli.environment import activate, create, list_environments
@@ -5,7 +7,11 @@ from start.cli.inspect import list_packages, show
 from start.cli.modify import add, remove
 from start.cli.project import init, install, new
 
-app = Typer(help="Package manager based on pip and venv", rich_markup_mode="markdown")
+app = Typer(
+    help="Package manager based on pip and venv",
+    rich_markup_mode="markdown",
+    pretty_exceptions_show_locals=bool(os.getenv("DEBUG")),
+)
 
 with_extra_args = {"allow_extra_args": True, "ignore_unknown_options": True}
 app.command(rich_help_panel="Project", context_settings=with_extra_args)(new)
