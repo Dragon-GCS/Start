@@ -1,10 +1,9 @@
 [build-system]
 build-backend = 'setuptools.build_meta'
-requires = ['setuptools']
+requires = ['setuptools', 'build']
 
 [project]
 name = 'start-manager'
-version = '0.5.3'
 description = 'A python package manager based on pip and venv'
 readme = 'README.md'
 requires-python = '>=3.10'
@@ -26,6 +25,7 @@ dependencies = [
     'rtoml',
     'typer',
 ]
+dynamic = ['version']
 
 [[project.authors]]
 name = 'Dragon-GCS'
@@ -43,6 +43,9 @@ doc = [
     'mkdocs',
     'mkdocs-material',
 ]
+[tool.setuptools.dynamic]
+version = {attr = "start.__version__"}
+
 [tool.ruff]
 line-length = 100
 
