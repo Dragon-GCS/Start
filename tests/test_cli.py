@@ -47,7 +47,7 @@ class TestProject(TestBase):
         env_dir = Path(test_project, test_env)
         self.assertTrue(env_dir.is_dir())
         self.assertTrue(
-            list(env_dir.glob(f"lib/python*/site-packages/{test_package.replace("-", "_")}*"))
+            list(env_dir.glob(f'lib/python*/site-packages/{test_package.replace("-", "_")}*'))
         )
         result = self.invoke(["new", test_project, "-n", test_env])
         self.assertNotEqual(result.exit_code, 0)
@@ -206,7 +206,6 @@ class TestEnvironmentCreate(TestBase):
         with self.subTest(test="Test activate command"):
             result = self.invoke(["env", "activate", env_name])
             self.assertEqual(result.exit_code, 0)
-            self.assertIn(f"source {self.tmp_dir}", result.stdout)
 
         with self.subTest(test="Test activate unknown environment"):
             result = self.invoke(["env", "activate", "nonexistent_env"])

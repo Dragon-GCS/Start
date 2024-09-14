@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.0
+
+- feat: Migrate cli framework to typer
+- chore: Add unittest
+- feat: Can pass extra arguments to pip command
+- feat: Add group option when modifying dependencies
+
 ## v0.5.3
 
 - feat: add `--verbose` for `init`, `new`, `install`, `env create` command
