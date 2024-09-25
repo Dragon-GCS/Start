@@ -1,6 +1,11 @@
 import os
+import subprocess
+from dataclasses import dataclass
+from pathlib import Path
 
-from start.logger import Warn
+from typer import Exit
+
+from start.logger import Error
 
 SETUP_PY = """
 from setuptools import setup\n
@@ -34,78 +39,109 @@ class Test{Camel}(unittest.TestCase):
     pass
 """.lstrip()
 
-START_CONFIG_PATH = [
-    os.path.join(os.path.expanduser("~"), ".start"),
-    os.path.join(os.path.expanduser("~"), ".config", "start"),
-]
+TEMPLATES_DIR = Path(os.getenv("START_DATA_DIR", "~/.start")).expanduser() / "templates"
+TEMPLATES_DIR.mkdir(exist_ok=True, parents=True)
 
 
+def copy_template(src: Path, dest: Path):
+    """Copy files, folders, and symlinks from source to destination."""
+    if not dest.exists():
+        dest.mkdir(parents=True)
+
+    for item in src.iterdir():
+        if item.is_dir():
+            copy_template(item, dest / item.name)
+        elif not (dest_item := dest / item.name).exists():
+            if item.is_symlink():
+                dest_item.symlink_to(item.readlink())
+            elif item.is_file():
+                dest_item.write_bytes(item.read_bytes())
+
+
+@dataclass
 class Template:
-    def __init__(self, project_name: str, vname: str):
-        self.project_name = project_name
-        self.vname = vname
+    """Create project template with specified name.
 
-    @classmethod
-    def write_file(cls, file_path: str, content: str):
-        """Write content to file."""
-        if not os.path.isfile(file_path):
-            with open(file_path, "w", encoding="utf8") as f:
-                f.write(content)
-        else:
-            Warn(f"File '{file_path}' already exists.")
+    Args:
+        project_name: Name of the project
+        vname: Name of the virtual environment
+        template_name: Name or git repo for the template
+    """
 
-    @classmethod
-    def create_folder(cls, folder_path):
-        """Create folder with examining if it exists."""
-        if not os.path.isdir(folder_path):
-            os.makedirs(folder_path)
-        else:
-            Warn(f"Folder '{folder_path}' already exists.")
+    project_name: str
+    template_name: str = ""
 
-    def create_by_template(self): ...
+    def __post_init__(self):
+        self.template_name = self.template_name.strip("/")
+        if self.template_name.count("/") == 1:
+            self.template_name = "https://github.com/" + self.template_name
 
     def create_default(self):
-        """Default template for project."""
-        project_name = self.project_name.replace("-", "_")
+        """Default template for project, default structure is:
+        project
+        ├── {project_name}
+        │   └── __init__.py
+        ├── tests
+        │   ├── __init__.py
+        │   └── test_{project_name}.py
+        ├── setup.py
+        ├── main.py
+        ├── README.md
+        └── pyproject.toml
+        """
+        project_name = Path(self.project_name).absolute().name
+        project_name = project_name.replace("-", "_").lower()
 
-        self.create_folder(project_name)
-        self.write_file(os.path.join(project_name, "__init__.py"), "")
+        Path(self.project_name, project_name).mkdir(exist_ok=True, parents=True)
+        if not (init_file := Path(self.project_name, project_name, "__init__.py")).exists():
+            init_file.touch()
 
-        tests_folder = "tests"
-        self.create_folder(tests_folder)
-        self.write_file(os.path.join(tests_folder, "__init__.py"), "")
-        self.write_file(
-            os.path.join(tests_folder, f"test_{project_name}.py"),
-            TEST_PY.format(Camel="".join(w.capitalize() for w in project_name.split("_"))),
-        )
-        self.write_file("setup.py", SETUP_PY)
-        self.write_file("main.py", MAIN_PY.format(project_name))
-        self.write_file("README.md", "")
+        Path(self.project_name, "tests").mkdir(exist_ok=True, parents=True)
+        if not (init_file := Path(self.project_name, "tests", "__init__.py")).exists():
+            init_file.touch()
+        if not (test_file := Path(self.project_name, "tests", f"test_{project_name}.py")).exists():
+            test_file.write_text(
+                TEST_PY.format(Camel="".join(w.capitalize() for w in project_name.split("_")))
+            )
 
-    def create(self, with_template: str):
+        if not (setup_file := Path(self.project_name, "setup.py")).exists():
+            setup_file.write_text(SETUP_PY)
+        if not (pyproject_file := Path(self.project_name, "pyproject.toml")).exists():
+            pyproject_file.write_text(PYPROJECT_TOML.format(name=project_name))
+        if not (main_file := Path(self.project_name, "main.py")).exists():
+            main_file.write_text(MAIN_PY.format(project_name))
+        if not (readme_file := Path(self.project_name, "README.md")).exists():
+            readme_file.touch()
+
+    def create_by_local_template(self):
+        """Create project template from local path."""
+        if not (template_folder := TEMPLATES_DIR / self.template_name).exists():
+            Error(f"Template '{self.template_name}' not found.")
+            raise Exit(1)
+        copy_template(template_folder, Path(self.project_name))
+
+    def create_by_remote_template(self):
+        try:
+            subprocess.check_output(
+                ["git", "clone", self.template_name, self.project_name],
+                stderr=subprocess.STDOUT,
+                encoding="utf-8",
+            )
+        except subprocess.CalledProcessError as e:
+            Error(f"Error cloning template: {self.template_name}")
+            Error(e.output.strip())
+            raise Exit(1)
+
+    def create(self):
         """Create project template at specified path.
 
         Args:
             path: Path to create the template
             skip_template: Skip template creation
         """
-        current_dir = os.getcwd()
-
-        if self.project_name == ".":
-            self.project_name = os.path.basename(current_dir).lower()
+        if not self.template_name:
+            self.create_default()
+        elif self.template_name.startswith(("http", "git")) or self.template_name.endswith(".git"):
+            self.create_by_remote_template()
         else:
-            os.chdir(self.project_name)
-
-        if with_template:
-            for config_path in START_CONFIG_PATH:
-                if os.path.exists(os.path.join(config_path, "template")):
-                    self.create_by_template()
-                    break
-            else:
-                self.create_default()
-
-        if os.getenv("HAS_GIT"):
-            self.write_file(".gitignore", "\n".join((self.vname, "**/__pycache__")))
-
-        self.write_file("pyproject.toml", PYPROJECT_TOML.format(name=self.project_name))
-        os.chdir(current_dir)
+            self.create_by_local_template()

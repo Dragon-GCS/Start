@@ -29,6 +29,9 @@ def new(
     Info(
         f"Start {'creating' if project_name != '.' else 'initializing'} " f"project: {project_name}"
     )
+    # Create project directory from template
+    Template(project_name=project_name, template_name=template).create()
+    # Create virtual environment
     ExtEnvBuilder(
         packages=packages,
         require=require,
@@ -40,8 +43,6 @@ def new(
         pip_args=ctx.args,
     ).create(path.join(project_name, vname))
     Success("Finish creating virtual environment.")
-    # Create project directory from template
-    Template(project_name=project_name, vname=vname).create(template)
     # modify dependencies in pyproject.toml
     DependencyManager(path.join(project_name, "pyproject.toml")).add(packages or [], save=True)
     Success("Finish creating project.")

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import tempfile
@@ -52,8 +53,8 @@ class TestUtils(unittest.TestCase):
         if not has_git:
             mock_warn.assert_called_with("Git not found, skip git init.")
             return
-        git_exists = os.path.exists(".git")
-        try_git_init()
+        git_exists = Path(".git").exists()
+        try_git_init(Path("."))
 
         if git_exists:
             mock_info.assert_called_with("Git repository already exists.")
