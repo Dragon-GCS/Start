@@ -11,7 +11,7 @@ from start.logger import Error, Info, Prompt, Warn
 _script_dir_name = Path(sysconfig.get_path("scripts")).name
 
 
-def display_activate_cmd(env_dir: Path | str, prompt: bool = True):
+def display_activate_cmd(env_dir: Path | str, prompt: bool = True) -> str:
     """Display the activate command for the virtual environment.
 
     Args:
@@ -34,7 +34,7 @@ def display_activate_cmd(env_dir: Path | str, prompt: bool = True):
         Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
         return ""
     bin_path = script_dir / active_scripts[shell]
-    active_cmd = os.path.abspath(bin_path)
+    active_cmd = str(bin_path.absolute())
     if not os.access(bin_path, os.X_OK):
         active_cmd = "source " + active_cmd
     if prompt:
@@ -42,9 +42,9 @@ def display_activate_cmd(env_dir: Path | str, prompt: bool = True):
     return active_cmd
 
 
-def try_git_init(repo_dir: str = "."):
+def try_git_init(repo_dir: Path):
     """Try to init a git repository in repo_dir"""
-    if os.path.exists(os.path.join(repo_dir, ".git")):
+    if (repo_dir / ".git").exists():
         Info("Git repository already exists.")
         return
     try:

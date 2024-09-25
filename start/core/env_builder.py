@@ -7,7 +7,7 @@ from typer import Exit
 from start.core.dependency import DependencyManager
 from start.core.pip_manager import PipManager
 from start.logger import Error, Info
-from start.utils import display_activate_cmd, try_git_init
+from start.utils import display_activate_cmd
 
 
 class ExtEnvBuilder(venv.EnvBuilder):
@@ -23,7 +23,6 @@ class ExtEnvBuilder(venv.EnvBuilder):
             packages to install in the virtual environment
         system_site_packages: Dont give the virtual environment access
             to system packages
-        init_repo: Try to init a git repository in the parent directory
         pip_args: Extra arguments to pass to pip command
     """
 
@@ -36,7 +35,6 @@ class ExtEnvBuilder(venv.EnvBuilder):
         with_pip: bool = True,
         upgrade_core: bool = False,
         system_site_packages: bool = False,
-        init_repo: bool = True,
         pip_args: list[str] = [],
     ):
         super().__init__(clear=force, system_site_packages=system_site_packages, with_pip=with_pip)
@@ -45,7 +43,6 @@ class ExtEnvBuilder(venv.EnvBuilder):
             dm = DependencyManager(require)
             self.packages.extend(str(dep) for dep in dm.packages())
         self.upgrade_core = upgrade_core
-        self.init_repo = init_repo
         self.verbose = verbose
         self.pip_args = pip_args
 
@@ -71,5 +68,3 @@ class ExtEnvBuilder(venv.EnvBuilder):
         Info(str(self.packages))
 
         display_activate_cmd(context.env_dir)
-        if self.init_repo:
-            try_git_init(os.path.dirname(os.path.abspath(context.env_dir)))

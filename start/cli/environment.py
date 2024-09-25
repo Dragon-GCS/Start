@@ -71,7 +71,6 @@ def create(
         with_pip=with_pip,
         upgrade_core=not without_upgrade,
         system_site_packages=not without_system_packages,
-        init_repo=False,
         pip_args=ctx.meta["pip_args"],
     ).create(env_path)
     Success("Finish creating virtual environment.")

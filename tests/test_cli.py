@@ -1,45 +1,31 @@
-import os
-import shutil
-import unittest
 from pathlib import Path
-from tempfile import mkdtemp
 from unittest.mock import MagicMock, call, patch
 
 from typer.testing import CliRunner
 
 from start.cli import app
 from start.core.dependency import Dependency
+from tests.base import TestBase
 
 test_project = "test_project"
 test_package = "pip-install-test"
 test_env = ".test_env"
 
 
-class TestBase(unittest.TestCase):
-    """Change the current working directory to a temporary directory before running each test."""
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.cwd = Path.cwd()
-        cls.runner = CliRunner()
-        cls.tmp_dir = mkdtemp()
-        os.chdir(cls.tmp_dir)
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        shutil.rmtree(cls.tmp_dir)
-        os.chdir(cls.cwd)
+class InvokeMixin:
+    runner = CliRunner()
 
     def invoke(self, *args, **kwargs):
         return self.runner.invoke(app, *args, **kwargs)
 
 
-class TestProject(TestBase):
+class TestProject(TestBase, InvokeMixin):
     @patch("start.core.env_builder.Error")
     @patch("start.cli.project.Info")
     @patch("start.cli.project.Success")
     def test_new(self, mock_success: MagicMock, mock_info: MagicMock, mock_error: MagicMock):
-        self.invoke(["new", test_project, test_package, "-n", test_env])
+        result = self.invoke(["new", test_project, test_package, "-n", test_env])
+        self.assertEqual(result.exit_code, 0)
         mock_info.assert_called_with(f"Start creating project: {test_project}")
         mock_success.assert_has_calls(
             [call("Finish creating virtual environment."), call("Finish creating project.")]
@@ -72,7 +58,7 @@ class TestProject(TestBase):
         mock_pip_manager.return_value.install.assert_called_once_with(test_package, pip_args=[])
 
 
-class TestModify(TestBase):
+class TestModify(TestBase, InvokeMixin):
     def setUp(self) -> None:
         super().setUp()
         self.dep_file = Path("requirements.txt")
@@ -103,7 +89,7 @@ class TestModify(TestBase):
                 )
 
 
-class TestInspect(TestBase):
+class TestInspect(TestBase, InvokeMixin):
     @patch("start.cli.inspect.PipManager")
     def test_show_packages(self, mock_pip_manager: MagicMock):
         mock_pip = mock_pip_manager.return_value
@@ -179,7 +165,7 @@ class TestInspect(TestBase):
             mock_dm.packages.assert_called_with("test_group")
 
 
-class TestEnvironmentCreate(TestBase):
+class TestEnvironmentCreate(TestBase, InvokeMixin):
     def setUp(self) -> None:
         from start.cli import environment
 
