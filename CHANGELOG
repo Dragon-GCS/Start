@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.1
+
+- feat: Support local folder, git repository as initial template
+
 ## v0.6.0
 
 - feat: Migrate cli framework to typer
