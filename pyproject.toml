@@ -48,6 +48,3 @@ version = {attr = "start.__version__"}
 
 [tool.ruff]
 line-length = 100
-
-[tool.setuptools]
-packages = ['start']
