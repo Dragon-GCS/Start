@@ -5,6 +5,8 @@ on:
     paths:
       - "start/**.py"
       - "pyproject.toml"
+    branches:
+      - "*"
 
 jobs:
   CodeCheck:
