@@ -1,45 +1,42 @@
 import os
-from pathlib import Path
-import shutil
 import subprocess
-import tempfile
-import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from start.utils import display_activate_cmd, is_env_dir, try_git_init
+from start.utils import _script_dir_name, display_activate_cmd, is_env_dir, try_git_init
+from tests.base import TestBase
 
 
-class TestUtils(unittest.TestCase):
+class TestUtils(TestBase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.env_dir = tempfile.mkdtemp()
-        subprocess.check_call(["python", "-m", "venv", f"{cls.env_dir}", "--without-pip"])
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        if os.path.exists(cls.env_dir):
-            shutil.rmtree(cls.env_dir)
+        super().setUpClass()
+        cls.env_dir = Path(".venv")
+        subprocess.check_call(["python", "-m", "venv", cls.env_dir, "--without-pip"])
 
     def test_activate_cmd(self):
+        nt_activate_file = str((self.env_dir / _script_dir_name / "Activate.ps1").absolute())
+        posix_activate_file = str((self.env_dir / _script_dir_name / "activate").absolute())
         if os.name == "nt":
-            self.assertEqual(
-                display_activate_cmd(self.env_dir),
-                os.path.join(self.env_dir, "Scripts\\Activate.ps1"),
-            )
-            os.name = "unix"  # mock unix
-        base_path = os.path.join(self.env_dir, "bin", "activate")
-        if not os.access(base_path, os.X_OK):
-            base_path = "source " + base_path
-        os.environ["SHELL"] = "/bin/bash"
-        self.assertEqual(display_activate_cmd(self.env_dir), base_path)
-        os.environ["SHELL"] = "/bin/zsh"
-        self.assertEqual(display_activate_cmd(self.env_dir), base_path)
-        os.environ["SHELL"] = "/bin/fish"
-        self.assertEqual(display_activate_cmd(self.env_dir), base_path + ".fish")
-        os.environ["SHELL"] = "/bin/csh"
-        self.assertEqual(display_activate_cmd(self.env_dir), base_path + ".csh")
+            self.assertEqual(display_activate_cmd(self.env_dir), nt_activate_file)
+
+        for shell, suffix in (
+            ("/bin/bash", ""),
+            ("/bin/zsh", ""),
+            ("/bin/fish", ".fish"),
+            ("/bin/csh", ".csh"),
+        ):
+            os.environ["SHELL"] = shell
+            expected_cmd = posix_activate_file + suffix
+            if not os.access(expected_cmd, os.X_OK):
+                expected_cmd = "source " + expected_cmd
+            with self.subTest(shell=shell):
+                self.assertEqual(display_activate_cmd(self.env_dir), expected_cmd)
+
         os.environ["SHELL"] = ""
-        self.assertEqual(display_activate_cmd(self.env_dir), "")
+        self.assertEqual(
+            display_activate_cmd(self.env_dir), "" if os.name != "nt" else nt_activate_file
+        )
 
     @patch("start.utils.Warn")
     @patch("start.utils.Info")
@@ -60,9 +57,6 @@ class TestUtils(unittest.TestCase):
             mock_info.assert_called_with("Git repository already exists.")
         else:
             mock_info.assert_called_with("Git repository initialized.")
-
-        if not git_exists:
-            os.rmdir(".git")
 
     def test_is_env_dir(self):
         # Test when the path is a virtual environment directory

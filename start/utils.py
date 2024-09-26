@@ -5,6 +5,8 @@ from pathlib import Path
 from subprocess import CalledProcessError, check_call
 from typing import Optional
 
+from typer import Exit
+
 from start.core.config import DEFAULT_ENV
 from start.logger import Error, Info, Prompt, Warn
 
@@ -29,10 +31,12 @@ def display_activate_cmd(env_dir: Path | str, prompt: bool = True) -> str:
         "Powershell": "Activate.ps1",
     }
     script_dir = Path(env_dir, _script_dir_name)
-    shell = "Powershell" if os.name == "nt" else Path(os.getenv("SHELL", "")).name
+    shell = Path(os.getenv("SHELL", "")).name
+    if not shell and os.name == "nt":
+        shell = "Powershell"
     if not shell:
         Warn("Unknown shell, decide for yourself how to activate the virtual environment.")
-        return ""
+        raise Exit(1)
     bin_path = script_dir / active_scripts[shell]
     active_cmd = str(bin_path.absolute())
     if not os.access(bin_path, os.X_OK):

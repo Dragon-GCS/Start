@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
@@ -32,8 +33,9 @@ class TestProject(TestBase, InvokeMixin):
         )
         env_dir = Path(test_project, test_env)
         self.assertTrue(env_dir.is_dir())
+        package_dir = "lib" if os.name == "nt" else "lib/python*"
         self.assertTrue(
-            list(env_dir.glob(f'lib/python*/site-packages/{test_package.replace("-", "_")}*'))
+            list(env_dir.glob(f'{package_dir}/site-packages/{test_package.replace("-", "_")}*'))
         )
         result = self.invoke(["new", test_project, "-n", test_env])
         self.assertNotEqual(result.exit_code, 0)
