@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.2
+
+- fix: Error on package discovery
+- fix: Error about test case on windows
+
 ## v0.6.1
 
 - feat: Support local folder, git repository as initial template
