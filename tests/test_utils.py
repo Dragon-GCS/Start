@@ -3,6 +3,8 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from typer import Exit
+
 from start.utils import _script_dir_name, display_activate_cmd, is_env_dir, try_git_init
 from tests.base import TestBase
 
@@ -20,6 +22,7 @@ class TestUtils(TestBase):
         if os.name == "nt":
             self.assertEqual(display_activate_cmd(self.env_dir), nt_activate_file)
 
+        _shell = os.environ.get("SHELL", "")
         for shell, suffix in (
             ("/bin/bash", ""),
             ("/bin/zsh", ""),
@@ -34,9 +37,12 @@ class TestUtils(TestBase):
                 self.assertEqual(display_activate_cmd(self.env_dir), expected_cmd)
 
         os.environ["SHELL"] = ""
-        self.assertEqual(
-            display_activate_cmd(self.env_dir), "" if os.name != "nt" else nt_activate_file
-        )
+        if os.name == "nt":
+            self.assertEqual(display_activate_cmd(self.env_dir), nt_activate_file)
+        else:
+            with self.assertRaises(Exit):
+                display_activate_cmd(self.env_dir)
+        os.environ["SHELL"] = _shell
 
     @patch("start.utils.Warn")
     @patch("start.utils.Info")
