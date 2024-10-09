@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.3
+
+- fix: Callback error for processing pip args
+
 ## v0.6.2
 
 - fix: Error on package discovery
