@@ -5,13 +5,13 @@ from typer import Argument, Context, Option
 
 def correct_extra_args(ctx: Context, packages: list[str]):
     """Due to packages cost all the extra args, we need to separate them."""
-    meta = ctx.meta
+    ctx.meta.setdefault("pip_args", [])
     packages = packages or []
     for i, arg in enumerate(packages):
         if not arg.startswith("-"):
             continue
         # TODO! ctx.args can't store the extra args, so we need to store them in ctx.meta
-        meta.setdefault("pip_args", []).extend(packages[i:])
+        ctx.meta["pip_args"].extend(packages[i:])
         return packages[:i]
     return packages
 

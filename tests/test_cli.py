@@ -78,8 +78,21 @@ class TestModify(TestBase, InvokeMixin):
 
         for method, mock_method in (("add", mock_pip.install), ("remove", mock_pip.uninstall)):
             with self.subTest(method=method):
-                self.invoke([method, *packages, "-g", group, "-d", self.dep_file, *pip_args, "-v"])
+                res = self.invoke([method, *packages])
+                self.assertEqual(res.exit_code, 0)
+                mock_pip_manager.assert_called_with(verbose=False)
+                mock_method.assert_called_with(*packages, pip_args=[])
+                mock_dm.modify_dependencies.assert_called_with(
+                    method=method,
+                    packages=mock_method.return_value,
+                    group="",
+                    save=True,
+                )
 
+                res = self.invoke(
+                    [method, *packages, "-g", group, "-d", self.dep_file, *pip_args, "-v"]
+                )
+                self.assertEqual(res.exit_code, 0)
                 mock_pip_manager.assert_called_with(verbose=True)
                 mock_method.assert_called_with(*packages, pip_args=pip_args)
                 mock_dependency_manager.assert_called_with(str(self.dep_file))
