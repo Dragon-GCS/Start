@@ -11,6 +11,7 @@ from tests.base import TestBase
 test_project = "test_project"
 test_package = "pip-install-test"
 test_env = ".test_env"
+os.environ["SHELL"] = "bash"
 
 
 class InvokeMixin:
