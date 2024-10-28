@@ -99,13 +99,11 @@ class PipManager:
     def execute(self, cmd: List[str]):
         """Execute the pip command."""
         cmd = self.cmd + cmd
-        try:
-            with capture_output(self.verbose) as stdout:
-                output = run(cmd, text=True, stdout=stdout, stderr=stdout, check=True)
-            output.stdout = stdout.read()
-            self.set_outputs(output)
-        except CalledProcessError as output:
-            self.set_outputs(output)
+        with capture_output(self.verbose) as stdout, capture_output(self.verbose) as stderr:
+            output = run(cmd, text=True, stdout=stdout, stderr=stderr)
+        output.stdout = stdout.read()
+        output.stderr = stderr.read()
+        self.set_outputs(output)
         return self
 
     def install(self, *packages: str, pip_args: list[str]) -> List[str]:
