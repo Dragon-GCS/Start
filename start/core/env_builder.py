@@ -56,7 +56,7 @@ class ExtEnvBuilder(venv.EnvBuilder):
 
     def post_setup(self, context: SimpleNamespace):
         """Install and upgrade packages after created environment."""
-        Info(context.env_exe)
+        Info("Binary path: " + context.env_exe)
         pip = PipManager(context.env_exe, self.verbose)
         if self.upgrade_core:
             Info("Upgrading core packages...")
@@ -65,6 +65,5 @@ class ExtEnvBuilder(venv.EnvBuilder):
         if self.packages:
             Info("Start installing packages...")
             pip.install(*self.packages, pip_args=self.pip_args)
-        Info(str(self.packages))
 
         display_activate_cmd(context.env_dir)
