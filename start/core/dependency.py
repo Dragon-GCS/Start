@@ -14,9 +14,9 @@ class Dependency:
     """Parse the dependency string to name, extras, version and markers."""
 
     __slots__ = ("_raw", "name", "extra", "version", "markers")
-    pattern = re.compile(
+    pkg_pattern = re.compile(
         r"""
-    ^(?P<name>[\w\d_\-]+)           # package name
+    ^(?P<name>[\w\d_-]+)           # package name
     (\[(?P<extras>[\w\d_,\s]+)\])?  # extras option
     (\s*(?P<version_spec>[=><!~]+\s*[\w\d.*]+(,\s*([=><!~]+)\s*[\w\d.*]+)*))?   # version
     (\s*;\s*(?P<markers>.*))?      # markers
@@ -24,16 +24,30 @@ class Dependency:
     """,
         re.VERBOSE,
     )
+    # https://pip.pypa.io/en/stable/topics/vcs-support/
+    vcs_pattern = re.compile(
+        r"""
+    ((?P<pkg_name>[\w\d_-]+)@)?    # package name
+    (?P<vcs>\w+)\+(?P<protocol>\w+)://  # vcs
+    ((?P<username>[^/\\]+)(:(?P<password>.+))?@)?         # username
+    (?P<url>[^@]*)                 # url
+    /((?P<name>[\w\d_\-]+)(\.git)?)   # package name
+    (@(?P<rev>.+))?        # revision
+    """,
+        re.VERBOSE,
+    )
 
     def __init__(self, dep: str):
         self._raw = dep
         self.name = self.extra = self.version = self.markers = ""
-        if not (match := self.pattern.match(dep)):
-            return
-        self.name = match.group("name").replace("_", "-")
-        self.extra = match.group("extras") or ""
-        self.version = match.group("version_spec") or ""
-        self.markers = match.group("markers") or ""
+        if match := self.pkg_pattern.match(dep):
+            self.name = match.group("name").replace("_", "-")
+            self.extra = match.group("extras") or ""
+            self.version = match.group("version_spec") or ""
+            self.markers = match.group("markers") or ""
+        elif match := self.vcs_pattern.match(dep):
+            self.name = match.group("pkg_name") or match.group("name")
+            self.version = match.group("rev") or ""
 
     def __repr__(self):
         return self._raw

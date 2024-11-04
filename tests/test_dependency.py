@@ -36,11 +36,30 @@ cases = [
         'python_version < "2.7"',
     ),
 ]
+vcs_cases = [
+    ("MyProject@svn+https://svn.example.com/MyProject.git", "MyProject", "", "", ""),
+    ("MyProject@git+file:///home/user/projects/MyProject", "MyProject", "", "", ""),
+    ("MyProject@git+https://git.example.com/MyProject.git@v1.0", "MyProject", "v1.0", "", ""),
+    ("my-project@git+ssh://git@github.com/Dragon-GCS/MyProject.git", "my-project", "", "", ""),
+    (
+        "git+https://git.example.com/project@refs/pull/123/head",
+        "project",
+        "refs/pull/123/head",
+        "",
+        "",
+    ),
+]
 
 
 class TestDependency(unittest.TestCase):
     def test_dependency(self):
         for case, *meta in cases:
+            dep = Dependency(case)
+            with self.subTest(case=case):
+                self.assertEqual([dep.name, dep.version, dep.extra, dep.markers], meta)
+
+    def test_svc_dependency(self):
+        for case, *meta in vcs_cases:
             dep = Dependency(case)
             with self.subTest(case=case):
                 self.assertEqual([dep.name, dep.version, dep.extra, dep.markers], meta)
