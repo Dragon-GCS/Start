@@ -212,3 +212,13 @@ class TestEnvironmentCreate(TestBase, InvokeMixin):
         with self.subTest(test="Test activate unknown environment"):
             result = self.invoke(["env", "activate", "nonexistent_env"])
             self.assertNotEqual(result.exit_code, 0)
+
+    def test_run_with_env(self):
+        result = self.invoke(["env", "create", test_env, "--without-pip", "--without-upgrade"])
+        self.assertEqual(result.exit_code, 0)
+        result = self.invoke(
+            ["run", "-n", test_env, "python3 -c 'import sys;print(sys.executable)' > output"]
+        )
+        self.assertEqual(result.exit_code, 0)
+        with open("output") as f:
+            self.assertEqual(f.read().strip(), f"{Path(test_env, 'bin/python3').resolve()}")

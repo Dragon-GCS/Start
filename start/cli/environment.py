@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from subprocess import Popen
 
 from typer import Context, Exit
 
@@ -51,7 +52,7 @@ def activate(env_name: _p.EnvName):
 def create(
     ctx: Context,
     env_name: _p.EnvName,
-    packages: _p.Packages,
+    packages: _p.Packages = None,
     require: _p.Require = "",
     force: _p.Force = False,
     verbose: _p.Verbose = False,
@@ -82,3 +83,29 @@ def list_environments():
     for env in _data_dir.iterdir():
         if is_env_dir(env):
             Info(f"{env.name}({env.absolute()})")
+
+
+def run(commands: list[str], env: _p.VName = ""):
+    """Run a command in the virtual environment."""
+    if not env:
+        # default to find environment in current directory
+        for env in DEFAULT_ENV:
+            if is_env_dir(env_path := env):
+                break
+        else:
+            Error(
+                "No virtual environment found. Use 'start init' to create a "
+                "new environment on current directory."
+            )
+            raise Exit(1)
+    # find environment in with specified name, or in data directory
+    # env_path will be the first found path
+    elif not (is_env_dir(env_path := env) or is_env_dir(env_path := _data_dir / env)):
+        Error(
+            f"Virtual environment {env} not found. Use 'start env create' to create a new environment."
+        )
+        raise Exit(1)
+
+    cmd = display_activate_cmd(env_path, prompt=False)
+    with Popen(f"{cmd} && {' '.join(commands)}", shell=True) as proc:
+        proc.communicate()
