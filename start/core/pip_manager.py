@@ -1,12 +1,8 @@
-import contextlib
 import os
 import re
-import time
 from functools import cached_property
-from io import TextIOWrapper
-from subprocess import PIPE, CalledProcessError, CompletedProcess, check_output, run
-from tempfile import TemporaryFile
-from threading import Thread
+from subprocess import PIPE, Popen, check_output
+from threading import Lock, Thread
 from typing import Dict, Generator, List, Optional, Tuple
 
 from start.core.dependency import Dependency
@@ -22,70 +18,6 @@ BRANCH = "├─"
 END = "└─"
 LINE = "│ "
 INDENT = "  "
-
-
-@contextlib.contextmanager
-def capture_output(verbose: bool = False) -> Generator[TextIOWrapper, None, None]:
-    stream = TemporaryFile("w+", buffering=1)
-    running = True
-
-    def _read_output():
-        import re
-
-        from rich.progress import Progress
-
-        # wait for the first data to read
-        ptr, _cur_ptr = 0, 0
-        current_task = None
-        with Progress() as progress:
-            while running:
-                _cur_ptr = stream.tell()
-                # wait for new data to read
-                if _cur_ptr == ptr:
-                    time.sleep(0.1)
-                    continue
-                # seek to the last read position
-                stream.seek(ptr)
-                try:
-                    data = stream.readline()
-                    ptr = stream.tell()
-                except UnicodeDecodeError:
-                    # if decode failed, seek to the last read position
-                    # wait newline to be written and try to read again
-                    stream.seek(ptr)
-                    continue
-                if match := re.match(r"Progress (\d+) of (\d+)", data):
-                    if current_task is None:
-                        current_task = progress.add_task(
-                            description="\t", total=int(match.group(2))
-                        )
-                    progress.update(current_task, completed=int(match.group(1)))
-                else:
-                    if current_task is not None:
-                        progress.remove_task(current_task)
-                        current_task = None
-                    print(data, end="")
-        stream.seek(ptr)
-
-        while data := stream.readline():
-            if match := re.match(r"Progress (\d+) of (\d+)", data):
-                if current_task is None:
-                    current_task = progress.add_task(description="\t", total=int(match.group(2)))
-                progress.update(current_task, completed=int(match.group(1)))
-            else:
-                if current_task is not None:
-                    progress.remove_task(current_task)
-                    current_task = None
-                print(data, end="")
-
-    t = Thread(target=_read_output)
-    if verbose:
-        t.start()
-    yield stream
-    running = False
-    if verbose:
-        t.join()
-    stream.seek(0)
 
 
 class PipManager:
@@ -108,24 +40,28 @@ class PipManager:
         self.execu = executable
         self.verbose = verbose
         if self.verbose and (not self.version or self.version[0] < 24):
-            Warn("--verbose is only supported in pip version >= 24")
+            Warn("Option '--verbose' is only supported in pip version >= 24")
             self.verbose = False
 
     @cached_property
-    def version(self) -> Optional[tuple[int, int, int]]:
+    def version(self) -> Optional[tuple[int, int]]:
         """Get the pip version."""
         output = check_output(self.cmd + ["--version"], text=True)
-        if _match := re.search(r"(\d+)\.(\d+)\.(\d+)", output):
-            return (int(_match.group(1)), int(_match.group(2)), int(_match.group(3)))
+        if _match := re.search(r"(\d+)\.(\d+)(\.(\d+))?", output):
+            return int(_match.group(1)), int(_match.group(2))
         return None
 
     def execute(self, cmd: List[str]):
         """Execute the pip command."""
         cmd = self.cmd + cmd
-        with capture_output(self.verbose) as stdout:
-            output = run(cmd, text=True, stdout=stdout, stderr=PIPE)
-        output.stdout = stdout.read()
-        self.set_outputs(output)
+        with Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=1, universal_newlines=True) as process:
+            if self.verbose:
+                self.capture_outputs(process)
+            else:
+                stdout, stderr = process.communicate()
+                self.stdout = stdout.strip().split("\n")
+                self.stderr = stderr.strip().split("\n")
+        self.return_code = process.returncode
         return self
 
     def install(self, *packages: str, pip_args: list[str]) -> List[str]:
@@ -162,12 +98,47 @@ class PipManager:
         self.execute(["uninstall", *packages, *pip_args]).show_output()
         return [*packages]
 
-    def set_outputs(self, output: CompletedProcess | CalledProcessError):
-        """Set the outputs that to be parse."""
-        self.stdout = output.stdout.strip().split("\n") if output.stdout else []
-        self.stderr = output.stderr.strip().split("\n") if output.stderr else []
-        self.return_code = output.returncode
-        return self
+    def capture_outputs(self, process: Popen):
+        """Set the outputs that to be parse.
+        Thanks to StackOverflow:
+            https://stackoverflow.com/questions/2715847/read-streaming-input-from-subprocess-communicate/17698359
+        """
+
+        self.stdout, self.stderr = [], []
+        _lock = Lock()
+        assert process.stdout and process.stderr, "stdout and stderr should be set here"
+
+        def read_stdout():
+            from rich.progress import Progress
+
+            assert process.stdout is not None
+            # wait for the first data to read
+            current_task = None
+            with Progress() as progress:
+                for line in process.stdout:
+                    if match := re.match(r"Progress (\d+) of (\d+)", line):
+                        if current_task is None:
+                            current_task = progress.add_task(
+                                description="\t", total=int(match.group(2))
+                            )
+                        progress.update(current_task, completed=int(match.group(1)))
+                    else:
+                        if current_task is not None:
+                            progress.remove_task(current_task)
+                            current_task = None
+                        with _lock:
+                            print(line, end="")
+                        self.stdout.append(line.strip())
+
+        # Guess stdout and stderr will close  together when the process is closed
+        # So don't need to join this thread here
+        Thread(target=read_stdout).start()
+
+        for line in process.stderr:
+            line = line.strip()
+            with _lock:
+                Error(line)
+            self.stderr.append(line)
 
     def decode(self, output: bytes):
         """Decode the output to utf8 or gbk."""
@@ -180,8 +151,6 @@ class PipManager:
         """Display the pip command output"""
         # if verbose is True, the output has been displayed
         if self.verbose:
-            if self.stderr:
-                Error("\n".join(self.stderr))
             return
         for line in self.stdout:
             line = line.strip()
