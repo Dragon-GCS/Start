@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.0
+
+- perf: Optimize the logic to capture output of subprocess
+- feat: Add `start run` to run command without activate virtual environment
+
 ## v0.6.5
 
 - fix: Error for capturing pip stderr
