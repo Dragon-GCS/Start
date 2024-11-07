@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.1
+
+- fix: Activate command on unix shell
+- fix: Wrong meaning of `--without-upgrade` and `--without-system_message` flags
+- ci: Fix test case on github action
+
 ## v0.7.0
 
 - perf: Optimize the logic to capture output of subprocess
