@@ -39,7 +39,7 @@ def display_activate_cmd(env_dir: Path | str, prompt: bool = True) -> str:
         raise Exit(1)
     bin_path = script_dir / active_scripts[shell]
     active_cmd = str(bin_path.absolute())
-    if not os.access(bin_path, os.X_OK):
+    if os.name != "nt":
         active_cmd = "source " + active_cmd
     if prompt:
         Prompt("Run this command to activate the virtual environment: " + active_cmd)

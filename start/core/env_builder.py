@@ -37,12 +37,16 @@ class ExtEnvBuilder(venv.EnvBuilder):
         system_site_packages: bool = False,
         pip_args: list[str] = [],
     ):
-        super().__init__(clear=force, system_site_packages=system_site_packages, with_pip=with_pip)
+        super().__init__(
+            clear=force,
+            system_site_packages=system_site_packages,
+            with_pip=with_pip,
+            upgrade_deps=upgrade_core,
+        )
         self.packages = packages or []
         if require:
             dm = DependencyManager(require)
             self.packages.extend(str(dep) for dep in dm.packages())
-        self.upgrade_core = upgrade_core
         self.verbose = verbose
         self.pip_args = pip_args
 
@@ -58,9 +62,6 @@ class ExtEnvBuilder(venv.EnvBuilder):
         """Install and upgrade packages after created environment."""
         Info("Binary path: " + context.env_exe)
         pip = PipManager(context.env_exe, self.verbose)
-        if self.upgrade_core:
-            Info("Upgrading core packages...")
-            pip.install("pip", "setuptools", pip_args=["--upgrade"])
 
         if self.packages:
             Info("Start installing packages...")

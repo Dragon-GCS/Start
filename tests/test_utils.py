@@ -31,7 +31,7 @@ class TestUtils(TestBase):
         ):
             os.environ["SHELL"] = shell
             expected_cmd = posix_activate_file + suffix
-            if not os.access(expected_cmd, os.X_OK):
+            if os.name != "nt":
                 expected_cmd = "source " + expected_cmd
             with self.subTest(shell=shell):
                 self.assertEqual(display_activate_cmd(self.env_dir), expected_cmd)

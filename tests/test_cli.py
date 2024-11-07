@@ -1,4 +1,5 @@
 import os
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, call, patch
 
@@ -216,9 +217,12 @@ class TestEnvironmentCreate(TestBase, InvokeMixin):
     def test_run_with_env(self):
         result = self.invoke(["env", "create", test_env, "--without-pip", "--without-upgrade"])
         self.assertEqual(result.exit_code, 0)
-        result = self.invoke(
-            ["run", "-n", test_env, "python3 -c 'import sys;print(sys.executable)' > output"]
+        # start run will call os.execvp, which will replace the current process
+        # so we need to run it in a separate process
+        result = subprocess.run(
+            ["start", "run", "-n", test_env, "python3 -c 'import sys;print(sys.executable)'>out"]
         )
-        self.assertEqual(result.exit_code, 0)
-        with open("output") as f:
-            self.assertEqual(f.read().strip(), f"{Path(test_env, 'bin/python3').resolve()}")
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(
+            Path("out").read_text().strip(), f"{Path(test_env, 'bin/python3').resolve()}"
+        )

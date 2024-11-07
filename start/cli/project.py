@@ -38,8 +38,8 @@ def new(
         force=force,
         verbose=verbose,
         with_pip=with_pip,
-        upgrade_core=without_upgrade,
-        system_site_packages=without_system_packages,
+        upgrade_core=not without_upgrade,
+        system_site_packages=not without_system_packages,
         pip_args=ctx.args,
     ).create(path.join(project_name, vname))
     Success("Finish creating virtual environment.")

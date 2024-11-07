@@ -106,6 +106,13 @@ def run(commands: list[str], env: _p.VName = ""):
         )
         raise Exit(1)
 
-    cmd = display_activate_cmd(env_path, prompt=False)
-    with Popen(f"{cmd} && {' '.join(commands)}", shell=True) as proc:
-        proc.communicate()
+    active_cmd = display_activate_cmd(env_path, prompt=False)
+    cmd = f"{active_cmd} && {' '.join(commands)}"
+    if os.name == "nt":
+        with Popen(["powershell.exe", "-c", cmd]) as proc:
+            proc.communicate()
+    else:
+        if not (shell := os.getenv("SHELL")):
+            Error("Unknown shell to run command.")
+            raise Exit(1)
+        os.execvp(shell, [shell, "-c", cmd])
