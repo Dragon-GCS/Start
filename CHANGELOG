@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.2
+
+- feat: Load username and email from git config when create default pyproject.toml
+- feat: Set current workdir as default value of `start env activate` command
+
 ## v0.7.1
 
 - fix: Activate command on unix shell
