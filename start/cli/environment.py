@@ -15,7 +15,7 @@ _data_dir = Path(os.getenv("START_DATA_DIR", "~/.start")).expanduser().absolute(
 _data_dir.mkdir(exist_ok=True, parents=True)
 
 
-def activate(env_name: _p.EnvName):
+def activate(env_name: _p.EnvName = "."):
     """Display the activate command for the virtual environment.
 
     Start will check following path to find the virtual environment:

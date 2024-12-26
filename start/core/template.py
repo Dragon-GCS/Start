@@ -6,6 +6,7 @@ from pathlib import Path
 from typer import Exit
 
 from start.logger import Error
+from start.utils import get_user_info
 
 SETUP_PY = """
 from setuptools import setup\n
@@ -17,16 +18,16 @@ PYPROJECT_TOML = """
 build-backend = "setuptools.build_meta"
 requires = ["setuptools"]\n
 [project]
-name = "{name}"
+name = "{project}"
 version = "0.0.1"
 dependencies = []
 [[project.authors]]
-name = ""
-email = "example@example.com"\n
+name = "{username}"
+email = "{email}"\n
 [project.optional-dependencies]
 dev = []\n
 [tool.setuptools]
-packages = ["{name}"]\n
+packages = ["{project}"]\n
 """.lstrip()
 MAIN_PY = """
 import {}\n
@@ -107,7 +108,10 @@ class Template:
         if not (setup_file := Path(self.project_name, "setup.py")).exists():
             setup_file.write_text(SETUP_PY)
         if not (pyproject_file := Path(self.project_name, "pyproject.toml")).exists():
-            pyproject_file.write_text(PYPROJECT_TOML.format(name=project_name))
+            username, email = get_user_info()
+            pyproject_file.write_text(
+                PYPROJECT_TOML.format(project=project_name, username=username, email=email)
+            )
         if not (main_file := Path(self.project_name, "main.py")).exists():
             main_file.write_text(MAIN_PY.format(project_name))
         if not (readme_file := Path(self.project_name, "README.md")).exists():

@@ -2,7 +2,7 @@ import os
 import sys
 import sysconfig
 from pathlib import Path
-from subprocess import CalledProcessError, check_call
+from subprocess import CalledProcessError, check_call, check_output
 from typing import Optional
 
 from typer import Exit
@@ -59,6 +59,16 @@ def try_git_init(repo_dir: Path):
         Warn("Git not found, skip git init.")
     except CalledProcessError as e:
         Error("Git init failed: ", e.output.decode("utf-8"))
+
+
+def get_user_info() -> tuple[str, str]:
+    """Get user info from git config"""
+    try:
+        user_name = check_output(["git", "config", "user.name"]).decode("utf-8").strip()
+        user_email = check_output(["git", "config", "user.email"]).decode("utf-8").strip()
+        return user_name, user_email
+    except (OSError, CalledProcessError):
+        return "", ""
 
 
 def update_config_with_default(config: dict, default: dict):
