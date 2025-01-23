@@ -123,26 +123,31 @@ class DependencyManager:
             raise Exit(1)
 
         if not group:
-            packages_ref = self.project["dependencies"]
+            packages_ref: list[str] = self.project["dependencies"]
         elif group not in self.project["optional-dependencies"] and method == "remove":
             return
         else:
-            packages_ref = self.project["optional-dependencies"][group]
+            packages_ref: list[str] = self.project["optional-dependencies"][group]
         # convert package to pure name for lookup
-        dependencies = {Dependency(p): p for p in packages_ref}
+        dependencies = {Dependency(p): i for i, p in enumerate(packages_ref)}
 
         _origin_package_num = len(packages_ref)
         if method == "add":
-            packages_ref.extend(
-                package for package in packages if Dependency(package) not in dependencies
-            )
+            # compare modified packages and exists packages
+            # if modified package's name already exists, update it else append it
+            for package in packages:
+                if (i := dependencies.get(Dependency(package))) is not None:
+                    packages_ref[i] = package
+                else:
+                    packages_ref.append(package)
+            self._changed = True
         elif method == "remove":
             for package in packages:
-                if (dep := Dependency(package)) in dependencies:
-                    packages_ref.remove(dependencies[dep])
-        self._changed = _origin_package_num != len(packages_ref)
+                if (i := dependencies.get(Dependency(package))) is not None:
+                    packages_ref.pop(i)
+            self._changed = _origin_package_num != len(packages_ref)
         packages_ref.sort()
-        if save and self._changed:
+        if save:
             self.save()
 
     def add(self, packages: Iterable[str], group: str = "", save: bool = False):

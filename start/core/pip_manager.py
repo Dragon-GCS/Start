@@ -166,6 +166,8 @@ class PipManager:
         output = output.strip()
         if output.startswith("Successfully installed"):
             return [name.rsplit("-", 1)[0] for name in output.split()[2:]]
+        if output.startswith("Requirement already satisfied:"):
+            return [output.split()[3].split("=")[0]]
         return []
 
     def parse_list_output(self) -> List[str]:
