@@ -37,7 +37,7 @@ class TestProject(TestBase, InvokeMixin):
         self.assertTrue(env_dir.is_dir())
         package_dir = "lib" if os.name == "nt" else "lib/python*"
         self.assertTrue(
-            list(env_dir.glob(f'{package_dir}/site-packages/{test_package.replace("-", "_")}*'))
+            list(env_dir.glob(f"{package_dir}/site-packages/{test_package.replace('-', '_')}*"))
         )
         result = self.invoke(["new", test_project, "-n", test_env])
         self.assertNotEqual(result.exit_code, 0)

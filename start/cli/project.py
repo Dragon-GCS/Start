@@ -26,9 +26,7 @@ def new(
 ):
     """Create a new project and virtual environment, install the specified packages."""
 
-    Info(
-        f"Start {'creating' if project_name != '.' else 'initializing'} " f"project: {project_name}"
-    )
+    Info(f"Start {'creating' if project_name != '.' else 'initializing'} project: {project_name}")
     # Create project directory from template
     Template(project_name=project_name, template_name=template).create()
     # Create virtual environment
