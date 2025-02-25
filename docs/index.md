@@ -10,10 +10,12 @@ Install from pypi
 >>> pip install start-manager
 ```
 
-Install from github
+Install from source
 
 ```shell
->>> pip install start@git+https://github.com/Dragon-GCS/Start
+>>> git clone https://github.com/Dragon-GCS/Start
+>>> cd Start
+>>> pip install -e .
 ```
 
 > `start` is a default alias in **powershell**, use **`Remove-Item alias:start -Force`** to remove alias before use `start`
